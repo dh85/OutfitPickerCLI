@@ -5,6 +5,12 @@ import PackageDescription
 
 let package = Package(
     name: "OutfitPickerCLI",
+    platforms: [
+        .iOS(.v17),
+        .macOS(.v14),
+        .tvOS(.v17),
+        .watchOS(.v10),
+    ],
     dependencies: [
         .package(url: "https://github.com/dh85/OutfitPickerCore", from: "1.1.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),

@@ -17,7 +17,9 @@ struct OutfitService {
         if availableCount == allOutfits.count {
             return allOutfits
         }
+
         
+
         // Use OutfitPickerCore's showRandomOutfit to determine which outfits are actually available
         // This is more reliable than trying to reconstruct the cache logic
         var availableOutfits: [OutfitReference] = []
@@ -66,6 +68,10 @@ struct OutfitService {
         }.count
     }
 
+    func getWornOutfits2() async throws -> [String: [String]] {
+        return try await picker.showAllWornOutfits()
+    }
+
     func getWornOutfits() async throws -> [String: [OutfitReference]] {
         let categories = try await picker.getCategories()
         var wornOutfitsByCategory: [String: [OutfitReference]] = [:]
@@ -73,7 +79,7 @@ struct OutfitService {
         for category in categories {
             let allOutfits = try await picker.showAllOutfits(from: category)
             let availableOutfits = try await getAvailableOutfits(for: category)
-            
+                
             // Worn outfits are those in allOutfits but not in availableOutfits
             let wornOutfits = allOutfits.filter { outfit in
                 !availableOutfits.contains { $0.fileName == outfit.fileName }

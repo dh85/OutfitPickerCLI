@@ -192,9 +192,9 @@ struct MainMenu {
 
     private func showWornMenu() async {
         do {
-            let wornOutfitsByCategory = try await outfitService.getWornOutfits()
+            let wornOutfitsByCategory = try await outfitService.getWornOutfits2()
 
-            if wornOutfitsByCategory.isEmpty {
+            if wornOutfitsByCategory.values.allSatisfy(\.isEmpty) {
                 UI.info("No worn outfits found")
                 await show()
                 return
@@ -203,13 +203,12 @@ struct MainMenu {
             print("\n\n✅ \(UI.colorize("Worn Outfits", UI.bold + UI.green))")
             print("\(UI.colorize(String(repeating: "─", count: 40), UI.green))")
 
-            let sortedCategories = wornOutfitsByCategory.keys.sorted()
-            for categoryName in sortedCategories {
-                let outfits = wornOutfitsByCategory[categoryName]!
+            let sortedCategories = wornOutfitsByCategory.sorted { $0.key < $1.key }
+            for (categoryName, outfits) in sortedCategories {
                 print("\n📁 \(UI.colorize(categoryName, UI.bold + UI.blue)) (\(outfits.count) worn)")
 
                 for outfit in outfits {
-                    print("  • \(outfit.fileName)")
+                    print("  • \(outfit)")
                 }
             }
 
