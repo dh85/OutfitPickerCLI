@@ -11,13 +11,19 @@ let package = Package(
         .tvOS(.v17),
         .watchOS(.v10),
     ],
+    products: [
+        .library(name: "OutfitPickerCore", targets: ["OutfitPickerCore"]),
+        .executable(name: "outfit-picker", targets: ["OutfitPickerCLI"]),
+    ],
     dependencies: [
-        .package(url: "https://github.com/dh85/OutfitPickerCore", from: "1.1.0"),
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.0.0")
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
+        .target(name: "OutfitPickerCore", dependencies: [], path: "Sources/OutfitPickerCore"),
+        .target(
+            name: "OutfitPickerTestSupport", dependencies: ["OutfitPickerCore"],
+            path: "Sources/OutfitPickerTestSupport"
+        ),
         .executableTarget(
             name: "OutfitPickerCLI",
             dependencies: [
@@ -26,8 +32,14 @@ let package = Package(
             ]
         ),
         .testTarget(
+            name: "OutfitPickerCoreTests",
+            dependencies: ["OutfitPickerCore", "OutfitPickerTestSupport"],
+            path: "Tests/OutfitPickerCoreTests"
+        ),
+        .testTarget(
             name: "OutfitPickerCLITests",
-            dependencies: ["OutfitPickerCLI"]
+            dependencies: ["OutfitPickerCLI", "OutfitPickerTestSupport"],
+            path: "Tests/OutfitPickerCLITests"
         ),
     ]
 )
