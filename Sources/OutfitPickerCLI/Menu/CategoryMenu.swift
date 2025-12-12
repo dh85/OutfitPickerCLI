@@ -9,11 +9,9 @@ struct CategoryMenu {
 
     func show() async {
         do {
-            let allOutfits = try await outfitService.picker.showAllOutfits(from: category)
-            let availableCount = try await outfitService.picker.getAvailableCount(for: category)
-
+            let state = try await outfitService.picker.getOutfitState(for: category)
             print(
-                "\n📁 \(UI.colorize(category.name, UI.bold + UI.blue)) \(UI.colorize("(\(allOutfits.count - availableCount) of \(allOutfits.count) outfits worn)", UI.yellow))"
+                "\n📁 \(UI.colorize(category.name, UI.bold + UI.blue)) \(UI.colorize("(\(state.statusText))", UI.yellow))"
             )
 
             await handleOutfitLoop()

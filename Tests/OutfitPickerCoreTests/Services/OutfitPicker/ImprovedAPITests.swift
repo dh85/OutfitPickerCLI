@@ -49,21 +49,15 @@ struct ImprovedAPITests {
         #expect(!categoryNames.isEmpty)
     }
 
-    @Test("Available count example works")
-    func availableCountExample() async throws {
-        let (sut, _) = try await makeTestSetup()
 
-        let available = try await sut.getAvailableCount(for: "casual")
-        #expect(available >= 0)
-    }
 
     @Test("Reset category example works")
     func resetCategoryExample() async throws {
         let (sut, _) = try await makeTestSetup()
 
         try await sut.resetCategory("casual")
-        let available = try await sut.getAvailableCount(for: "casual")
-        #expect(available > 0)
+        let outfits = try await sut.showAllOutfits(from: "casual")
+        #expect(!outfits.isEmpty)
     }
 
     @Test("Reset all categories example works")
@@ -87,54 +81,15 @@ struct ImprovedAPITests {
         }
     }
 
-    @Test("Detect changes example works")
-    func detectChangesExample() async throws {
-        let (sut, _) = try await makeTestSetup()
 
-        let changes = try await sut.detectChanges()
-        #expect(!changes.newCategories.isEmpty || changes.newCategories.isEmpty)
-        #expect(!changes.deletedCategories.isEmpty || changes.deletedCategories.isEmpty)
-    }
 
-    @Test("Batch wear outfits example works")
-    func batchWearExample() async throws {
-        let (sut, _) = try await makeTestSetup()
 
-        let outfit1 = try await sut.showRandomOutfit(from: "casual")
-        let outfit2 = try await sut.showRandomOutfit(from: "formal")
 
-        if let outfit1 = outfit1, let outfit2 = outfit2 {
-            let outfitsWorn = [outfit1, outfit2]
-            try await sut.wearOutfits(outfitsWorn)
-        }
-    }
 
-    @Test("Batch reset categories example works")
-    func batchResetExample() async throws {
-        let (sut, _) = try await makeTestSetup()
 
-        try await sut.resetCategories(["casual", "formal"])
-    }
 
-    @Test("Search outfits example works")
-    func searchOutfitsExample() async throws {
-        let (sut, _) = try await makeTestSetup()
 
-        let results = try await sut.searchOutfits(pattern: "shirt")
-        for outfit in results {
-            #expect(outfit.fileName.localizedCaseInsensitiveContains("shirt"))
-        }
-    }
 
-    @Test("Filter categories example works")
-    func filterCategoriesExample() async throws {
-        let (sut, _) = try await makeTestSetup()
-
-        let workCategories = try await sut.filterCategories(pattern: "formal")
-        for category in workCategories {
-            #expect(category.name.localizedCaseInsensitiveContains("formal"))
-        }
-    }
 
     // MARK: - Error Handling Validation
 
@@ -156,23 +111,9 @@ struct ImprovedAPITests {
         }
     }
 
-    @Test("Empty search pattern throws invalidInput")
-    func emptySearchPattern() async throws {
-        let (sut, _) = try await makeTestSetup()
 
-        await #expect(throws: OutfitPickerError.invalidInput("Search pattern cannot be empty")) {
-            _ = try await sut.searchOutfits(pattern: "")
-        }
-    }
 
-    @Test("Empty filter pattern throws invalidInput")
-    func emptyFilterPattern() async throws {
-        let (sut, _) = try await makeTestSetup()
 
-        await #expect(throws: OutfitPickerError.invalidInput("Filter pattern cannot be empty")) {
-            _ = try await sut.filterCategories(pattern: "")
-        }
-    }
 
     // MARK: - API Consistency
 
@@ -185,10 +126,7 @@ struct ImprovedAPITests {
             _ = try await sut.showRandomOutfit(from: "")
         }
 
-        // All methods should reject empty search patterns
-        await #expect(throws: OutfitPickerError.invalidInput("Search pattern cannot be empty")) {
-            _ = try await sut.searchOutfits(pattern: "")
-        }
+
     }
 
     // MARK: - Helpers

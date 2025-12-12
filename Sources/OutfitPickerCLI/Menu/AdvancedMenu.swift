@@ -73,7 +73,7 @@ struct AdvancedMenu {
             }
 
             let category = categories[index - 1]
-            try await outfitService.picker.resetCategory(category)
+            try await outfitService.picker.resetCategory(category.name)
             UI.success("Reset worn outfits for \(category.name)")
         } catch {
             UI.error("Failed to reset category: \(error.localizedDescription)")

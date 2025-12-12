@@ -31,7 +31,8 @@ public enum OutfitPickerError: Error, LocalizedError, Equatable {
         case .cacheError: "Cache error"
         case .invalidConfiguration: "Invalid configuration"
         case .invalidInput(let message): "Invalid input: \(message)"
-        case .rotationCompleted(let category): "All outfits in '\(category)' have been worn. Category has been reset."
+        case .rotationCompleted(let category):
+            "All outfits in '\(category)' have been worn. Category has been reset."
         }
     }
 }
@@ -59,17 +60,3 @@ extension OutfitPickerError {
         }
     }
 }
-
-/// Convenience type alias for Result with OutfitPickerError.
-///
-/// Use this for consistent error handling across outfit picker operations:
-/// ```swift
-/// let result: OutfitPickerResult<OutfitReference> = outfitPicker.showRandomOutfit()
-/// switch result {
-/// case .success(let outfit):
-///     // Handle successful outfit selection
-/// case .failure(let error):
-///     // Handle error cases
-/// }
-/// ```
-public typealias OutfitPickerResult<T> = Result<T, OutfitPickerError>

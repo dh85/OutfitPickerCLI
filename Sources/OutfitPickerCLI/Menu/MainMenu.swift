@@ -72,14 +72,10 @@ struct MainMenu {
 
         for (index, info) in availableCategories.enumerated() {
             do {
-                let totalCount = try await outfitService.getActualOutfitCount(for: info.category)
-                let availableCount = try await outfitService.picker.getAvailableCount(
-                    for: info.category)
-                let wornCount = totalCount - availableCount
-                let statusText = "\(wornCount) of \(totalCount) outfits worn"
+                let state = try await outfitService.picker.getOutfitState(for: info.category)
                 let padding = String(repeating: " ", count: max(0, 20 - info.category.name.count))
                 print(
-                    "  \(UI.colorize("[", UI.cyan))\(UI.colorize("\(index + 1)", UI.bold + UI.green))\(UI.colorize("]", UI.cyan)) 📁 \(info.category.name)\(padding) \(UI.colorize(statusText, UI.yellow))"
+                    "  \(UI.colorize("[", UI.cyan))\(UI.colorize("\(index + 1)", UI.bold + UI.green))\(UI.colorize("]", UI.cyan)) 📁 \(info.category.name)\(padding) \(UI.colorize(state.statusText, UI.yellow))"
                 )
             } catch {
                 let padding = String(repeating: " ", count: max(0, 20 - info.category.name.count))
@@ -192,9 +188,9 @@ struct MainMenu {
 
     private func showWornMenu() async {
         do {
-            let wornOutfitsByCategory = try await outfitService.getWornOutfits2()
+            let wornOutfitsByCategory = try await outfitService.getWornOutfits()
 
-            if wornOutfitsByCategory.values.allSatisfy(\.isEmpty) {
+            if wornOutfitsByCategory.isEmpty {
                 UI.info("No worn outfits found")
                 await show()
                 return
@@ -208,7 +204,8 @@ struct MainMenu {
                 print("\n📁 \(UI.colorize(categoryName, UI.bold + UI.blue)) (\(outfits.count) worn)")
 
                 for outfit in outfits {
-                    print("  • \(outfit)")
+                    let cleanName = outfit.fileName.replacingOccurrences(of: ".avatar", with: "")
+                    print("  • \(cleanName)")
                 }
             }
 
@@ -283,7 +280,7 @@ struct MainMenu {
             }
             
             let selectedCategory = categories[categoryIndex - 1]
-            let allOutfits = try await outfitService.picker.showAllOutfits(from: selectedCategory)
+            let allOutfits = try await outfitService.picker.showAllOutfits(from: selectedCategory.name)
             
             if allOutfits.isEmpty {
                 UI.info("No outfits found in \(selectedCategory.name)")
@@ -294,12 +291,12 @@ struct MainMenu {
             print("\n👗 \(UI.colorize("Outfits in \(selectedCategory.name)", UI.bold + UI.blue))")
             print("\(UI.colorize(String(repeating: "─", count: 40), UI.blue))")
             
-            let wornOutfits = try await outfitService.getWornOutfits()
-            let wornInCategory = Set(wornOutfits[selectedCategory.name]?.map { $0.fileName } ?? [])
+            let state = try await outfitService.picker.getOutfitState(for: selectedCategory)
+            let wornFileNames = Set(state.wornOutfits.map { $0.fileName })
             
             for (index, outfit) in allOutfits.enumerated() {
                 let cleanName = outfit.fileName.replacingOccurrences(of: ".avatar", with: "")
-                let wornStatus = wornInCategory.contains(outfit.fileName) ? " \(UI.colorize("(worn)", UI.yellow))" : ""
+                let wornStatus = wornFileNames.contains(outfit.fileName) ? " \(UI.colorize("(worn)", UI.yellow))" : ""
                 print("  \(UI.colorize("[", UI.cyan))\(UI.colorize("\(index + 1)", UI.bold + UI.green))\(UI.colorize("]", UI.cyan)) \(cleanName)\(wornStatus)")
             }
             
@@ -320,7 +317,7 @@ struct MainMenu {
             }
             
             let selectedOutfit = allOutfits[outfitIndex - 1]
-            let isWorn = wornInCategory.contains(selectedOutfit.fileName)
+            let isWorn = wornFileNames.contains(selectedOutfit.fileName)
             
             // Present the manually selected outfit
             let result = await presentation.presentManualOutfit(

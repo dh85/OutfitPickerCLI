@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol DataManagerProtocol {
+public protocol DataManagerProtocol: Sendable {
     func data(contentsOf url: URL) throws -> Data
     func write(_ data: Data, to url: URL) throws
 }
@@ -17,7 +17,7 @@ public struct DefaultDataManager: DataManagerProtocol {
     }
 }
 
-public protocol DirectoryProvider {
+public protocol DirectoryProvider: Sendable {
     func baseDirectory() throws -> URL
 }
 
@@ -53,7 +53,7 @@ public struct DefaultDirectoryProvider: DirectoryProvider {
 /// try service.save(myConfig)
 /// let loaded = try service.load()
 /// ```
-public struct FileService<T: Codable>: @unchecked Sendable {
+public struct FileService<T: Codable>: Sendable {
     private let fileManager: any FileManagerProtocol
     private let dataManager: DataManagerProtocol
     private let directoryProvider: DirectoryProvider

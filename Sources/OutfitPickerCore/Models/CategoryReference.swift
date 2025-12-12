@@ -10,7 +10,7 @@ public struct CategoryReference: Sendable, Hashable, CustomStringConvertible {
     /// Full filesystem path to the category directory
     public let path: String
 
-    internal init(name: String, path: String) {
+    public init(name: String, path: String) {
         self.name = name
         self.path = path
     }
@@ -28,7 +28,7 @@ public struct OutfitReference: Sendable, Hashable, CustomStringConvertible {
     /// Category containing this outfit
     public let category: CategoryReference
 
-    internal init(fileName: String, category: CategoryReference) {
+    public init(fileName: String, category: CategoryReference) {
         self.fileName = fileName
         self.category = category
     }

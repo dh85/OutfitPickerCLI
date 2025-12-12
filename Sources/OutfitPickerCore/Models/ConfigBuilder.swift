@@ -74,7 +74,7 @@ public enum SupportedLanguage: String, CaseIterable, Sendable, Equatable {
 ///     .exclude("formal", "winter")
 ///     .build()
 /// ```
-public final class ConfigBuilder: @unchecked Sendable {
+public final class ConfigBuilder {
     private var rootPath: String?
     private var language: SupportedLanguage = .english
     private var excludedCategories = Set<String>()

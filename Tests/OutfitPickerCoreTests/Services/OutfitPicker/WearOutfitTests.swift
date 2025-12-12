@@ -28,7 +28,7 @@ struct WearOutfitTests {
 
         try await env.sut.wearOutfit(ref)
 
-        // One save
+        // One save for adding outfit (no rotation completion)
         #expect(env.cache.saved.count == 1)
         let saved = try #require(env.cache.saved.first)
         let cat = try #require(saved.categories[categoryName])
@@ -69,8 +69,8 @@ struct WearOutfitTests {
         } catch OutfitPickerError.rotationCompleted(let category) {
             // Then - should throw rotationCompleted and reset the category
             #expect(category == categoryName)
-            #expect(env.cache.saved.count == 1)
-            let saved = try #require(env.cache.saved.first)
+            #expect(env.cache.saved.count == 2)  // Two saves: add outfit + reset
+            let saved = try #require(env.cache.saved.last)  // Get the final state
             let cat = saved.categories[categoryName]
             #expect(cat?.wornOutfits.isEmpty == true)
             #expect(cat?.totalOutfits == 2)
@@ -129,7 +129,7 @@ struct WearOutfitTests {
     }
 
     @Test func wear_failure_avatarListing_mapsToFileSystemError() async throws {
-        let sut = try makeOutfitPickerSUTWithFileSystemError(
+        let sut = try makeOutfitPickerSUTWithCategoryScannerError(
             FileSystemError.operationFailed
         )
         let ref = makeOutfitReference(

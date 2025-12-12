@@ -83,7 +83,7 @@ public struct ThrowingDirectoryProvider: DirectoryProvider {
 /// let service = FileService(dataManager: dataManager)
 /// // Write operations will fail with the specified error
 /// ```
-public struct ThrowingDataManager: DataManagerProtocol, @unchecked Sendable {
+public struct ThrowingDataManager: DataManagerProtocol {
     /// The error to throw from write operations
     public let error: Error
 
@@ -121,7 +121,7 @@ public struct ThrowingDataManager: DataManagerProtocol, @unchecked Sendable {
 /// let service = FileService(dataManager: dataManager)
 /// // Read operations will fail with the specified error
 /// ```
-public struct ThrowingReadDataManager: DataManagerProtocol, @unchecked Sendable {
+public struct ThrowingReadDataManager: DataManagerProtocol {
     /// The error to throw from read operations
     public let error: Error
 
@@ -163,7 +163,7 @@ public struct ThrowingReadDataManager: DataManagerProtocol, @unchecked Sendable 
 /// let service = ConfigService(fileService: FileService(dataManager: dataManager))
 /// // Load operations will fail with JSON parsing errors
 /// ```
-public struct CorruptingDataManager: DataManagerProtocol, @unchecked Sendable {
+public struct CorruptingDataManager: DataManagerProtocol {
     /// Initializes the corrupting data manager.
     public init() {}
 
@@ -202,15 +202,16 @@ public struct CorruptingDataManager: DataManagerProtocol, @unchecked Sendable {
 /// XCTAssertEqual(dataManager.lastWriteURL, url)
 /// XCTAssertEqual(dataManager.lastData, data)
 /// ```
-public final class RecordingDataManager: DataManagerProtocol,
-    @unchecked Sendable
-{
+public final class RecordingDataManager: DataManagerProtocol, Sendable {
     /// The URL of the last write operation, if any
-    public private(set) var lastWriteURL: URL?
+    private let _lastWriteURL = Locked<URL?>(nil)
+    public var lastWriteURL: URL? { _lastWriteURL.value }
     /// The data from the last write operation, if any
-    public private(set) var lastData: Data?
+    private let _lastData = Locked<Data?>(nil)
+    public var lastData: Data? { _lastData.value }
     /// The URL of the last read operation, if any
-    public private(set) var lastReadURL: URL?
+    private let _lastReadURL = Locked<URL?>(nil)
+    public var lastReadURL: URL? { _lastReadURL.value }
 
     /// Initializes the recording data manager.
     public init() {}
@@ -221,7 +222,7 @@ public final class RecordingDataManager: DataManagerProtocol,
     /// - Returns: The data read from the URL
     /// - Throws: Standard Data(contentsOf:) errors
     public func data(contentsOf url: URL) throws -> Data {
-        lastReadURL = url
+        _lastReadURL.withValue { $0 = url }
         return try Data(contentsOf: url)
     }
 
@@ -232,9 +233,67 @@ public final class RecordingDataManager: DataManagerProtocol,
     ///   - url: The URL to write to
     /// - Throws: Standard Data.write errors
     public func write(_ data: Data, to url: URL) throws {
-        lastWriteURL = url
-        lastData = data
+        _lastWriteURL.withValue { $0 = url }
+        _lastData.withValue { $0 = data }
         try data.write(to: url)
+    }
+}
+
+// MARK: - Category Scanner Test Doubles
+
+/// Fake category scanner for testing.
+///
+/// Provides controlled responses for category scanning operations
+/// without requiring actual filesystem access.
+public struct FakeCategoryScanner: CategoryScannerProtocol {
+    private let categoryInfos: [CategoryInfo]
+    private let outfitsByPath: [String: [FileEntry]]
+    
+    public init(categoryInfos: [CategoryInfo] = [], outfitsByPath: [String: [FileEntry]] = [:]) {
+        self.categoryInfos = categoryInfos
+        self.outfitsByPath = outfitsByPath
+    }
+    
+    public func scanCategories(in rootPath: String, excludedCategories: Set<String>) async throws -> [CategoryInfo] {
+        return categoryInfos
+    }
+    
+    public func getOutfits(in categoryPath: String) async throws -> [FileEntry] {
+        // Normalize the path by removing trailing slashes for matching
+        let normalizedPath = categoryPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        
+        // Try exact match first
+        if let outfits = outfitsByPath[categoryPath] {
+            return outfits.sorted(by: { $0.fileName < $1.fileName })
+        }
+        
+        // Try normalized path match
+        for (storedPath, outfits) in outfitsByPath {
+            let normalizedStoredPath = storedPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            if normalizedStoredPath == normalizedPath {
+                return outfits.sorted(by: { $0.fileName < $1.fileName })
+            }
+        }
+        
+        // No match found
+        return []
+    }
+}
+
+/// Category scanner that throws errors for testing.
+public struct ThrowingCategoryScanner: CategoryScannerProtocol {
+    private let error: Error
+    
+    public init(_ error: Error) {
+        self.error = error
+    }
+    
+    public func scanCategories(in rootPath: String, excludedCategories: Set<String>) async throws -> [CategoryInfo] {
+        throw error
+    }
+    
+    public func getOutfits(in categoryPath: String) async throws -> [FileEntry] {
+        throw error
     }
 }
 
@@ -252,9 +311,7 @@ public final class RecordingDataManager: DataManagerProtocol,
 /// let service = FileService(fileManager: fileManager)
 /// // Directory creation will fail, testing error handling
 /// ```
-public final class FileManagerThrowingCreateDir: FileManagerProtocol,
-    @unchecked Sendable
-{
+public final class FileManagerThrowingCreateDir: FileManagerProtocol {
     /// Initializes the throwing file manager.
     public init() {}
 

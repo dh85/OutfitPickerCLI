@@ -53,7 +53,7 @@ public struct Config: Codable, Sendable, Equatable {
             try LanguageValidator.validate(language)
 
             self.root = root
-            self.language = language ?? "en"
+            self.language = language ?? BusinessRules.defaultLanguage
             self.excludedCategories = excludedCategories
             self.knownCategories = knownCategories
             self.knownCategoryFiles = knownCategoryFiles

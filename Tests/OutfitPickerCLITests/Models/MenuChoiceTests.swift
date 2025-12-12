@@ -54,8 +54,9 @@ struct MenuChoiceTests {
     }
     
     @Test func menuChoiceAllCases() {
-        #expect(MenuChoice.allCases.count == 5)
+        #expect(MenuChoice.allCases.count == 6)
         #expect(MenuChoice.allCases.contains(.random))
+        #expect(MenuChoice.allCases.contains(.manual))
         #expect(MenuChoice.allCases.contains(.quit))
     }
     

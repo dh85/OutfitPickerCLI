@@ -87,18 +87,7 @@ struct ErrorHandlingTests {
         }
     }
 
-    @Test func getAvailableCount_WithEmptyCategory_ThrowsInvalidInput() async {
-        let env = try! makeOutfitPickerSUT()
 
-        do {
-            _ = try await env.sut.getAvailableCount(for: "")
-            Issue.record("Expected invalidInput error")
-        } catch OutfitPickerError.invalidInput(let message) {
-            #expect(message == "Category name cannot be empty")
-        } catch {
-            Issue.record("Expected invalidInput error, got \(error)")
-        }
-    }
 
     // MARK: - Error Propagation Tests
 
@@ -107,7 +96,7 @@ struct ErrorHandlingTests {
         let env = OutfitPickerTestEnv(
             sut: OutfitPicker(
                 configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                fileManager: FakeFileManager(.ok([:]), directories: [])),
+                categoryRepository: FakeCategoryRepository()),
             fileManager: FakeFileManager(.ok([:]), directories: []),
             cache: FakeCacheService(.ok(OutfitCache())),
             config: configSvc
@@ -132,7 +121,7 @@ struct ErrorHandlingTests {
 
         let cacheSvc = FakeCacheService(.throwsOnLoad(CacheError.decodingFailed))
         let env = OutfitPickerTestEnv(
-            sut: OutfitPicker(configService: configSvc, cacheService: cacheSvc, fileManager: fm),
+            sut: OutfitPicker(configService: configSvc, cacheService: cacheSvc, categoryRepository: FakeCategoryRepository()),
             fileManager: fm,
             cache: cacheSvc,
             config: configSvc
@@ -149,169 +138,14 @@ struct ErrorHandlingTests {
         }
     }
 
-    // MARK: - Batch Operations Error Handling
 
-    @Test func wearOutfits_WithEmptyFilename_ThrowsInvalidInput() async {
-        let env = try! makeOutfitPickerSUT()
-        let outfits = [
-            makeOutfitReference(root: safeRoot, category: "Test", fileName: "valid.avatar"),
-            makeOutfitReference(root: safeRoot, category: "Test", fileName: ""),
-        ]
-
-        do {
-            try await env.sut.wearOutfits(outfits)
-            Issue.record("Expected invalidInput error")
-        } catch OutfitPickerError.invalidInput(let message) {
-            #expect(message == "Outfit filename cannot be empty")
-        } catch {
-            Issue.record("Expected invalidInput error, got \(error)")
-        }
-    }
-
-    @Test func wearOutfits_WithNonExistentOutfit_ThrowsNoOutfitsAvailable() async {
-        let env = try! makeSingleCategorySUT(category: "Test", files: ["existing.avatar"])
-        let outfits = [
-            makeOutfitReference(root: safeRoot, category: "Test", fileName: "existing.avatar"),
-            makeOutfitReference(root: safeRoot, category: "Test", fileName: "missing.avatar"),
-        ]
-
-        do {
-            try await env.sut.wearOutfits(outfits)
-            Issue.record("Expected noOutfitsAvailable error")
-        } catch OutfitPickerError.noOutfitsAvailable {
-            // Expected
-        } catch {
-            Issue.record("Expected noOutfitsAvailable error, got \(error)")
-        }
-    }
-
-    @Test func wearOutfits_RethrowsOutfitPickerError() async {
-        // Test that OutfitPickerError is re-thrown directly in wearOutfits
-        let configSvc = FakeConfigService(.throwsError(OutfitPickerError.configurationNotFound))
-        let env = OutfitPickerTestEnv(
-            sut: OutfitPicker(
-                configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                fileManager: FakeFileManager(.ok([:]), directories: [])),
-            fileManager: FakeFileManager(.ok([:]), directories: []),
-            cache: FakeCacheService(.ok(OutfitCache())),
-            config: configSvc
-        )
-
-        let outfits = [
-            makeOutfitReference(root: safeRoot, category: "Test", fileName: "test.avatar")
-        ]
-
-        do {
-            try await env.sut.wearOutfits(outfits)
-            Issue.record("Expected OutfitPickerError")
-        } catch let error as OutfitPickerError {
-            #expect(error == OutfitPickerError.configurationNotFound)
-        } catch {
-            Issue.record("Expected OutfitPickerError, got \(error)")
-        }
-    }
-
-    @Test func resetCategories_WithEmptyCategory_ThrowsInvalidInput() async {
-        let env = try! makeOutfitPickerSUT()
-
-        do {
-            try await env.sut.resetCategories(["Valid", ""])
-            Issue.record("Expected invalidInput error")
-        } catch OutfitPickerError.invalidInput(let message) {
-            #expect(message == "Category name cannot be empty")
-        } catch {
-            Issue.record("Expected invalidInput error, got \(error)")
-        }
-    }
-
-    @Test func wearOutfits_WithEmptyCategoryName_ThrowsInvalidInput() async {
-        let env = try! makeOutfitPickerSUT()
-        let outfits = [
-            makeOutfitReference(root: safeRoot, category: "", fileName: "test.avatar")
-        ]
-
-        do {
-            try await env.sut.wearOutfits(outfits)
-            Issue.record("Expected invalidInput error")
-        } catch OutfitPickerError.invalidInput(let message) {
-            #expect(message == "Category name cannot be empty")
-        } catch {
-            Issue.record("Expected invalidInput error, got \(error)")
-        }
-    }
-
-    @Test func resetCategories_RethrowsOutfitPickerError() async {
-        let configSvc = FakeConfigService(.throwsError(OutfitPickerError.configurationNotFound))
-        let env = OutfitPickerTestEnv(
-            sut: OutfitPicker(
-                configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                fileManager: FakeFileManager(.ok([:]), directories: [])),
-            fileManager: FakeFileManager(.ok([:]), directories: []),
-            cache: FakeCacheService(.ok(OutfitCache())),
-            config: configSvc
-        )
-
-        do {
-            try await env.sut.resetCategories(["test"])
-            Issue.record("Expected OutfitPickerError")
-        } catch let error as OutfitPickerError {
-            #expect(error == OutfitPickerError.configurationNotFound)
-        } catch {
-            Issue.record("Expected OutfitPickerError, got \(error)")
-        }
-    }
-
-    @Test func searchOutfits_RethrowsOutfitPickerError() async {
-        let configSvc = FakeConfigService(.throwsError(OutfitPickerError.configurationNotFound))
-        let env = OutfitPickerTestEnv(
-            sut: OutfitPicker(
-                configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                fileManager: FakeFileManager(.ok([:]), directories: [])),
-            fileManager: FakeFileManager(.ok([:]), directories: []),
-            cache: FakeCacheService(.ok(OutfitCache())),
-            config: configSvc
-        )
-
-        do {
-            _ = try await env.sut.searchOutfits(pattern: "test")
-            Issue.record("Expected OutfitPickerError")
-        } catch let error as OutfitPickerError {
-            #expect(error == OutfitPickerError.configurationNotFound)
-        } catch {
-            Issue.record("Expected OutfitPickerError, got \(error)")
-        }
-    }
-
-    @Test func filterCategories_MapsGenericError() async {
-        // Create a mock that throws a generic error (not OutfitPickerError) from getCategories
-        let configSvc = FakeConfigService(.ok(try! Config(root: safeRoot)))
-        let fileManager = FakeFileManager(
-            .throwsError(FileSystemError.directoryNotFound), directories: [])
-        let env = OutfitPickerTestEnv(
-            sut: OutfitPicker(
-                configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                fileManager: fileManager),
-            fileManager: fileManager,
-            cache: FakeCacheService(.ok(OutfitCache())),
-            config: configSvc
-        )
-
-        do {
-            _ = try await env.sut.filterCategories(pattern: "test")
-            Issue.record("Expected OutfitPickerError")
-        } catch OutfitPickerError.fileSystemError {
-            // Expected - FileSystemError mapped to fileSystemError
-        } catch {
-            Issue.record("Expected fileSystemError, got \(error)")
-        }
-    }
 
     @Test func isOutfitWorn_MapsGenericError() async {
         let cacheSvc = FakeCacheService(.throwsOnLoad(CacheError.decodingFailed))
         let env = OutfitPickerTestEnv(
             sut: OutfitPicker(
                 configService: FakeConfigService(.ok(try! Config(root: safeRoot))),
-                cacheService: cacheSvc, fileManager: FakeFileManager(.ok([:]), directories: [])),
+                cacheService: cacheSvc, categoryRepository: FakeCategoryRepository()),
             fileManager: FakeFileManager(.ok([:]), directories: []),
             cache: cacheSvc,
             config: FakeConfigService(.ok(try! Config(root: safeRoot)))
@@ -327,27 +161,5 @@ struct ErrorHandlingTests {
         }
     }
 
-    @Test func filterCategories_MapsGenericErrorFromGetCategories() async {
-        // Create a scenario where getCategories throws a generic error that gets mapped
-        let configSvc = FakeConfigService(.ok(try! Config(root: safeRoot)))
-        let fileManager = FakeFileManager(
-            .throwsError(FileSystemError.directoryNotFound), directories: [])
-        let env = OutfitPickerTestEnv(
-            sut: OutfitPicker(
-                configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                fileManager: fileManager),
-            fileManager: fileManager,
-            cache: FakeCacheService(.ok(OutfitCache())),
-            config: configSvc
-        )
 
-        do {
-            _ = try await env.sut.filterCategories(pattern: "test")
-            Issue.record("Expected OutfitPickerError")
-        } catch OutfitPickerError.fileSystemError {
-            // Expected - FileSystemError from getCategories mapped to fileSystemError
-        } catch {
-            Issue.record("Expected fileSystemError, got \(error)")
-        }
-    }
 }

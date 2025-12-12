@@ -49,7 +49,7 @@ struct AllOutfitsTests {
     }
 
     @Test func mapsFileManagerFailure_toFileSystemError() async throws {
-        let sut = try makeOutfitPickerSUTWithFileSystemError(
+        let sut = try makeOutfitPickerSUTWithCategoryScannerError(
             FileSystemError.operationFailed
         )
 

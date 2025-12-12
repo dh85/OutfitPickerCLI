@@ -17,6 +17,10 @@ struct OutfitPickerErrorTests {
             (OutfitPickerError.cacheError, "Cache error"),
             (OutfitPickerError.invalidConfiguration, "Invalid configuration"),
             (OutfitPickerError.invalidInput("whoops"), "Invalid input: whoops"),
+            (
+                OutfitPickerError.rotationCompleted(category: "casual"),
+                "All outfits in 'casual' have been worn. Category has been reset."
+            ),
         ])
     }
 
@@ -32,6 +36,10 @@ struct OutfitPickerErrorTests {
                     OutfitPickerError.invalidInput("A"),
                     OutfitPickerError.invalidInput("A")
                 ),
+                (
+                    OutfitPickerError.rotationCompleted(category: "casual"),
+                    OutfitPickerError.rotationCompleted(category: "casual")
+                ),
             ],
             notEqual: [
                 (
@@ -41,6 +49,10 @@ struct OutfitPickerErrorTests {
                 (
                     OutfitPickerError.invalidInput("A"),
                     OutfitPickerError.invalidInput("B")
+                ),
+                (
+                    OutfitPickerError.rotationCompleted(category: "casual"),
+                    OutfitPickerError.rotationCompleted(category: "formal")
                 ),
             ]
         )

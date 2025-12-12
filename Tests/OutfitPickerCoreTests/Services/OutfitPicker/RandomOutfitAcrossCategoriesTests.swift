@@ -154,7 +154,7 @@ struct RandomOutfitAcrossCategoriesTests {
     }
 
     @Test func across_failure_rootListing_mapsToFileSystemError() async throws {
-        let sut = try makeOutfitPickerSUTWithFileSystemError(
+        let sut = try makeOutfitPickerSUTWithCategoryScannerError(
             FileSystemError.operationFailed
         )
 
@@ -178,10 +178,12 @@ struct RandomOutfitAcrossCategoriesTests {
             directories: Array(fs.directories)
         )
 
+        let categoryScanner = CategoryScanner(fileManager: fm)
+        let categoryRepository = CategoryRepository(categoryScanner: categoryScanner)
         let sut = OutfitPicker(
             configService: configSvc,
             cacheService: cacheSvc,
-            fileManager: fm
+            categoryRepository: categoryRepository
         )
 
         do {

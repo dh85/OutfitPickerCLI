@@ -7,7 +7,7 @@ public protocol CacheServiceProtocol: Sendable {
     func cachePath() throws -> URL
 }
 
-public struct CacheService: CacheServiceProtocol, @unchecked Sendable {
+public struct CacheService: CacheServiceProtocol {
     private let fileService: FileService<OutfitCache>
 
     public init(

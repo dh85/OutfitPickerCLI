@@ -22,9 +22,9 @@ import OutfitPickerCore
 /// // Error case
 /// let service = FakeConfigService(.throwsError(ConfigError.missingRoot))
 /// ```
-public final class FakeConfigService: ConfigServiceProtocol, @unchecked Sendable {
+public final class FakeConfigService: ConfigServiceProtocol, Sendable {
     /// Defines the behavior mode for the fake service.
-    public enum Mode {
+    public enum Mode: Sendable {
         /// Returns the provided configuration successfully
         case ok(Config)
         /// Throws the provided error when load() is called
@@ -87,9 +87,9 @@ public final class FakeConfigService: ConfigServiceProtocol, @unchecked Sendable
 /// try service.save(updatedCache)
 /// XCTAssertEqual(service.saved.count, 1)
 /// ```
-public final class FakeCacheService: CacheServiceProtocol, @unchecked Sendable {
+public final class FakeCacheService: CacheServiceProtocol, Sendable {
     /// Defines the behavior mode for the fake service.
-    public enum Mode {
+    public enum Mode: Sendable {
         /// Returns the provided cache successfully
         case ok(OutfitCache)
         /// Throws the provided error when load() is called
@@ -107,7 +107,8 @@ public final class FakeCacheService: CacheServiceProtocol, @unchecked Sendable {
     /// Array of all cache objects that have been saved.
     ///
     /// Used by tests to verify that save operations occurred with expected data.
-    public private(set) var saved: [OutfitCache] = []
+    private let _saved = Locked<[OutfitCache]>([])
+    public var saved: [OutfitCache] { _saved.value }
 
     /// Loads cache according to the configured mode.
     ///
@@ -124,7 +125,7 @@ public final class FakeCacheService: CacheServiceProtocol, @unchecked Sendable {
     ///
     /// - Parameter cache: The cache object to save
     /// - Throws: Never throws in this fake implementation
-    public func save(_ cache: OutfitCache) throws { saved.append(cache) }
+    public func save(_ cache: OutfitCache) throws { _saved.withValue { $0.append(cache) } }
 
     /// Not implemented - will cause fatal error if called.
     ///
@@ -155,9 +156,9 @@ public final class FakeCacheService: CacheServiceProtocol, @unchecked Sendable {
 /// // Simulate files disappearing
 /// let fm = FakeFileManager(.ok(contents), secondCallEmptyFor: [categoryURL])
 /// ```
-public final class FakeFileManager: FileManagerProtocol, @unchecked Sendable {
+public final class FakeFileManager: FileManagerProtocol, Sendable {
     /// Defines the behavior mode for filesystem operations.
-    public enum Behavior {
+    public enum Behavior: Sendable {
         /// Returns the provided filesystem structure successfully
         case ok([URL: [URL]])
         /// Throws the provided error for filesystem operations
@@ -177,7 +178,7 @@ public final class FakeFileManager: FileManagerProtocol, @unchecked Sendable {
     public let secondCallEmptyFor: Set<String>
 
     /// Tracks the number of calls to contentsOfDirectory for each path
-    private var callCounts: [String: Int] = [:]
+    private let callCounts = Locked<[String: Int]>([:])
 
     /// Initializes the fake file manager with specified behavior.
     ///
@@ -218,8 +219,11 @@ public final class FakeFileManager: FileManagerProtocol, @unchecked Sendable {
         case .ok(let map):
             let path = url.path(percentEncoded: false)
 
-            let count = (callCounts[path] ?? 0) + 1
-            callCounts[path] = count
+            let count = callCounts.withValue { counts in
+                let current = (counts[path] ?? 0) + 1
+                counts[path] = current
+                return current
+            }
 
             // If configured, return real contents on first call, empty on 2nd+
             if secondCallEmptyFor.contains(path), count >= 2 {

@@ -1,36 +1,47 @@
 import Foundation
 
 public struct CategoryCache: Codable, Equatable, Sendable {
-    public let wornOutfits: Set<String>
+    private var _wornOutfits: Set<String>
     public let totalOutfits: Int
     public let lastUpdated: Date
+
+    public var wornOutfits: Set<String> { _wornOutfits }
+
+    private enum CodingKeys: String, CodingKey {
+        case _wornOutfits = "wornOutfits"
+        case totalOutfits
+        case lastUpdated
+    }
 
     public init(
         wornOutfits: Set<String> = [],
         totalOutfits: Int,
         lastUpdated: Date = Date()
     ) {
-        self.wornOutfits = wornOutfits
+        self._wornOutfits = wornOutfits
         self.totalOutfits = totalOutfits
         self.lastUpdated = lastUpdated
     }
 
     public var isRotationComplete: Bool {
-        wornOutfits.count >= totalOutfits
+        _wornOutfits.count >= totalOutfits
     }
 
     public var rotationProgress: Double {
         guard totalOutfits > 0 else { return 1.0 }
-        return Double(wornOutfits.count) / Double(totalOutfits)
+        return Double(_wornOutfits.count) / Double(totalOutfits)
     }
 
     public var remainingOutfits: Int {
-        max(0, totalOutfits - wornOutfits.count)
+        max(0, totalOutfits - _wornOutfits.count)
     }
 
     public func adding(_ fileName: String) -> CategoryCache {
-        CategoryCache(
-            wornOutfits: wornOutfits.union([fileName]),
+        guard !_wornOutfits.contains(fileName) else { return self }
+        var newWornOutfits = _wornOutfits
+        newWornOutfits.insert(fileName)
+        return CategoryCache(
+            wornOutfits: newWornOutfits,
             totalOutfits: totalOutfits,
             lastUpdated: Date()
         )
@@ -41,7 +52,7 @@ public struct CategoryCache: Codable, Equatable, Sendable {
     }
 }
 
-public struct OutfitCache: Codable, Equatable {
+public struct OutfitCache: Codable, Equatable, Sendable {
     public let categories: [String: CategoryCache]
     public let version: Int
     public let createdAt: Date
@@ -57,6 +68,7 @@ public struct OutfitCache: Codable, Equatable {
     }
 
     public func updating(category path: String, with cache: CategoryCache) -> OutfitCache {
+        guard categories[path] != cache else { return self }
         var updatedCategories = categories
         updatedCategories[path] = cache
         return OutfitCache(
@@ -76,6 +88,7 @@ public struct OutfitCache: Codable, Equatable {
     }
 
     public func removing(category path: String) -> OutfitCache {
+        guard categories[path] != nil else { return self }
         var updatedCategories = categories
         updatedCategories.removeValue(forKey: path)
         return OutfitCache(

@@ -7,7 +7,7 @@ public protocol ConfigServiceProtocol: Sendable {
     func configPath() throws -> URL
 }
 
-public struct ConfigService: ConfigServiceProtocol, @unchecked Sendable {
+public struct ConfigService: ConfigServiceProtocol {
     private let fileService: FileService<Config>
 
     public init(
@@ -25,39 +25,29 @@ public struct ConfigService: ConfigServiceProtocol, @unchecked Sendable {
     }
 
     public func configPath() throws -> URL {
-        do {
+        return try ErrorMapper.execute {
             return try fileService.filePath()
-        } catch {
-            throw OutfitPickerError.from(error)
         }
     }
 
     public func load() throws -> Config {
-        do {
+        return try ErrorMapper.execute {
             guard let config = try fileService.load() else {
                 throw OutfitPickerError.configurationNotFound
             }
             return config
-        } catch let error as OutfitPickerError {
-            throw error
-        } catch {
-            throw OutfitPickerError.from(error)
         }
     }
 
     public func save(_ config: Config) throws {
-        do {
+        try ErrorMapper.execute {
             try fileService.save(config)
-        } catch {
-            throw OutfitPickerError.from(error)
         }
     }
 
     public func delete() throws {
-        do {
+        try ErrorMapper.execute {
             try fileService.delete()
-        } catch {
-            throw OutfitPickerError.from(error)
         }
     }
 }

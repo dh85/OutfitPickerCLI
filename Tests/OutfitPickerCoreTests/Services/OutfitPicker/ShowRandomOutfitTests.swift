@@ -143,7 +143,7 @@ struct ShowRandomOutfitTests {
         let env = OutfitPickerTestEnv(
             sut: OutfitPicker(
                 configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                fileManager: FakeFileManager(.ok([:]), directories: [])),
+                categoryRepository: FakeCategoryRepository()),
             fileManager: FakeFileManager(.ok([:]), directories: []),
             cache: FakeCacheService(.ok(OutfitCache())),
             config: configSvc
@@ -166,7 +166,7 @@ struct ShowRandomOutfitTests {
         let env = OutfitPickerTestEnv(
             sut: OutfitPicker(
                 configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                fileManager: fm),
+                categoryRepository: ThrowingCategoryRepository(FileSystemError.operationFailed)),
             fileManager: fm,
             cache: FakeCacheService(.ok(OutfitCache())),
             config: configSvc
@@ -189,7 +189,7 @@ struct ShowRandomOutfitTests {
         let fm = FakeFileManager(.ok(map), directories: [dir])
         let cacheSvc = FakeCacheService(.throwsOnLoad(CacheError.decodingFailed))
         let env = OutfitPickerTestEnv(
-            sut: OutfitPicker(configService: configSvc, cacheService: cacheSvc, fileManager: fm),
+            sut: OutfitPicker(configService: configSvc, cacheService: cacheSvc, categoryRepository: FakeCategoryRepository()),
             fileManager: fm,
             cache: cacheSvc,
             config: configSvc

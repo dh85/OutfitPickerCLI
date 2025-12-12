@@ -11,6 +11,13 @@ struct CategoryInfoTests {
 
     @Test
     func mixedStates_excludedEmptyNoAvatarAndHasOutfits_sortedAlphabetically() async throws {
+        let categoryInfos = [
+            CategoryInfo(category: CategoryReference(name: "A_Empty", path: "\(root)/A_Empty"), state: .empty, outfitCount: 0),
+            CategoryInfo(category: CategoryReference(name: "B_Excluded", path: "\(root)/B_Excluded"), state: .userExcluded, outfitCount: 0),
+            CategoryInfo(category: CategoryReference(name: "C_NoAvatar", path: "\(root)/C_NoAvatar"), state: .noAvatarFiles, outfitCount: 0),
+            CategoryInfo(category: CategoryReference(name: "D_HasOutfits", path: "\(root)/D_HasOutfits"), state: .hasOutfits, outfitCount: 2)
+        ]
+        let categoryRepository = FakeCategoryRepository(categoryInfos: categoryInfos)
         let sut = OutfitPicker(
             configService: FakeConfigService(
                 .ok(
@@ -22,25 +29,7 @@ struct CategoryInfoTests {
                 )
             ),
             cacheService: FakeCacheService(.ok(OutfitCache())),
-            fileManager: FakeFileManager(
-                .ok(
-                    makeFS(
-                        root: root,
-                        categories: [
-                            "D_HasOutfits": ["d1.avatar", "d2.avatar"],
-                            "A_Empty": [],
-                            "C_NoAvatar": ["readme.txt", "photo.png"],
-                            "B_Excluded": ["b.avatar"],
-                        ]
-                    ).contents),
-                directories: [
-                    URL(filePath: root, directoryHint: .isDirectory),
-                    URL(filePath: "\(root)/D_HasOutfits", directoryHint: .isDirectory),
-                    URL(filePath: "\(root)/A_Empty", directoryHint: .isDirectory),
-                    URL(filePath: "\(root)/C_NoAvatar", directoryHint: .isDirectory),
-                    URL(filePath: "\(root)/B_Excluded", directoryHint: .isDirectory),
-                ]
-            )
+            categoryRepository: categoryRepository
         )
 
         let infos = try await sut.getCategoryInfo()
@@ -68,14 +57,13 @@ struct CategoryInfoTests {
 
     @Test
     func noChildrenAtRoot_returnsEmptyArray() async throws {
-        let rootURL = URL(filePath: root, directoryHint: .isDirectory)
-        let fm = FakeFileManager(.ok([rootURL: []]), directories: [])
+        let categoryRepository = FakeCategoryRepository(categoryInfos: [])
         let sut = OutfitPicker(
             configService: FakeConfigService(
                 .ok(try Config(root: root, language: "en"))
             ),
             cacheService: FakeCacheService(.ok(OutfitCache())),
-            fileManager: fm
+            categoryRepository: categoryRepository
         )
 
         let infos = try await sut.getCategoryInfo()
@@ -91,7 +79,7 @@ struct CategoryInfoTests {
         let sut = OutfitPicker(
             configService: configSvc,
             cacheService: FakeCacheService(.ok(OutfitCache())),
-            fileManager: FakeFileManager(.ok([:]))
+            categoryRepository: FakeCategoryRepository()
         )
 
         do {
@@ -106,13 +94,14 @@ struct CategoryInfoTests {
     func failure_rootListing_mapsToFileSystemError() async throws {
         let config = try Config(root: root, language: "en")
         let configSvc = FakeConfigService(.ok(config))
-        let fm = FakeFileManager(
+        _ = FakeFileManager(
             .throwsError(FileSystemError.operationFailed)
         )
+        let categoryRepository = ThrowingCategoryRepository(FileSystemError.operationFailed)
         let sut = OutfitPicker(
             configService: configSvc,
             cacheService: FakeCacheService(.ok(OutfitCache())),
-            fileManager: fm
+            categoryRepository: categoryRepository
         )
 
         do {
