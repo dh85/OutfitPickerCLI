@@ -4,7 +4,9 @@
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {
             "installZsh": "false",
-            "username": "vscode",
+            "username": "ubuntu",
+            "userUid": "1000",
+            "userGid": "1000",
             "upgradePackages": "false"
         },
         "ghcr.io/devcontainers/features/git:1": {
@@ -23,23 +25,23 @@
         "--security-opt",
         "seccomp=unconfined"
     ],
-    "postCreateCommand": "sudo chown -R $USER:$USER $WORKSPACE_FOLDER",
-    // Configure tool-specific properties.
+    "postCreateCommand": "sudo chown -R ubuntu:ubuntu ${containerWorkspaceFolder}",
     "customizations": {
-        // Configure properties specific to VS Code.
         "vscode": {
-            // Set *default* container specific settings.json values on container create.
             "settings": {
                 "lldb.library": "/usr/lib/liblldb.so",
-                "[swift]": {
-                    "editor.formatOnSave": true
+                "editor.formatOnSave": true,
+                "[json]": {
+                    "editor.defaultFormatter": "vscode.json-language-features"
+                },
+                "[jsonc]": {
+                    "editor.defaultFormatter": "vscode.json-language-features"
                 }
             },
-            // Add the IDs of extensions you want installed when the container is created.
             "extensions": [
                 "swiftlang.swift-vscode"
             ]
         }
     },
-    "remoteUser": "vscode"
+    "remoteUser": "ubuntu"
 }
