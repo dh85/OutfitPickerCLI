@@ -84,8 +84,7 @@ struct AdvancedMenu {
 
     private func handlePathChange() async {
         do {
-            let configService = ConfigService()
-            let currentConfig = try configService.load()
+            let currentConfig = try await outfitService.picker.getConfiguration()
 
             print("\n📁 Current outfit path: \(UI.colorize(currentConfig.root, UI.cyan))")
 
@@ -102,7 +101,7 @@ struct AdvancedMenu {
                 excludedCategories: currentConfig.excludedCategories
             )
 
-            try configService.save(updatedConfig)
+            try await outfitService.picker.updateConfiguration(updatedConfig)
             UI.success("Outfit path updated to: \(newPath)")
 
         } catch {
@@ -114,8 +113,7 @@ struct AdvancedMenu {
 
     private func handleLanguageChange() async {
         do {
-            let configService = ConfigService()
-            let currentConfig = try configService.load()
+            let currentConfig = try await outfitService.picker.getConfiguration()
 
             print("\n🌐 Current language: \(UI.colorize(currentConfig.language ?? "en", UI.cyan))")
             print("Available languages: en, es, fr, de, it, pt, ru, ja, ko, zh")
@@ -133,7 +131,7 @@ struct AdvancedMenu {
                 excludedCategories: currentConfig.excludedCategories
             )
 
-            try configService.save(updatedConfig)
+            try await outfitService.picker.updateConfiguration(updatedConfig)
             UI.success("Language updated to: \(newLanguage)")
 
         } catch {
@@ -145,8 +143,7 @@ struct AdvancedMenu {
 
     private func handleExcludedChange() async {
         do {
-            let configService = ConfigService()
-            let currentConfig = try configService.load()
+            let currentConfig = try await outfitService.picker.getConfiguration()
             let categories = try await outfitService.picker.getCategories()
 
             let currentExcluded = currentConfig.excludedCategories.joined(separator: ", ")
@@ -188,7 +185,7 @@ struct AdvancedMenu {
                             language: currentConfig.language,
                             excludedCategories: Set(newExcluded)
                         )
-                        try configService.save(updatedConfig)
+                        try await outfitService.picker.updateConfiguration(updatedConfig)
                         await show()
                         return
                     }
@@ -221,7 +218,7 @@ struct AdvancedMenu {
                         excludedCategories: newExcluded
                     )
 
-                    try configService.save(updatedConfig)
+                    try await outfitService.picker.updateConfiguration(updatedConfig)
                     let displayText =
                         newExcluded.isEmpty ? "none" : newExcluded.joined(separator: ", ")
                     UI.success("Excluded categories updated to: \(displayText)")
@@ -251,7 +248,7 @@ struct AdvancedMenu {
                 excludedCategories: Set(newExcluded)
             )
 
-            try configService.save(updatedConfig)
+            try await outfitService.picker.updateConfiguration(updatedConfig)
             let displayText = newExcluded.isEmpty ? "none" : newExcluded.joined(separator: ", ")
             UI.success("Excluded categories updated to: \(displayText)")
 
@@ -276,11 +273,7 @@ struct AdvancedMenu {
         }
 
         do {
-            let configService = ConfigService()
-            let cacheService = CacheService()
-
-            try configService.delete()
-            try cacheService.delete()
+            try await outfitService.picker.factoryReset()
 
             UI.success("All settings and data reset successfully")
             print("🔄 Please restart the application to reconfigure")

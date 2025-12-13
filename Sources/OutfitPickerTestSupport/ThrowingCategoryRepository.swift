@@ -15,4 +15,6 @@ public struct ThrowingCategoryRepository: CategoryRepositoryProtocol {
     public func getOutfits(in categoryPath: String) async throws -> [FileEntry] {
         throw error
     }
+
+    public func invalidateCache() async {}
 }

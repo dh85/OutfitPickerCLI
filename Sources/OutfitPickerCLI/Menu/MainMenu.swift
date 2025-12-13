@@ -4,33 +4,25 @@ import OutfitPickerCore
 struct MainMenu {
     let outfitService: OutfitService
     let presentation: OutfitPresentation
+    let renderer = MenuRenderer()
     var session = OutfitSession()
 
     func show() async {
         do {
-            let title = "👗 Outfit Picker"
-            let titleWidth = 40
-            let padding = (titleWidth - title.count) / 2
-            let centeredTitle = String(repeating: " ", count: padding) + title
-
-            print("\n\(UI.colorize(centeredTitle, UI.bold + UI.cyan))")
-            print("\(UI.colorize(String(repeating: "─", count: 40), UI.cyan))")
-
-            showOutfitDirectory()
+            renderer.showTitle()
+            await showOutfitDirectory()
 
             let categoryInfos = try await outfitService.picker.getCategoryInfo()
-            let availableCategories = categoryInfos.filter { info in
-                if case .hasOutfits = info.state { return true }
-                return false
-            }
+            let availableCategories = try await outfitService.getAvailableCategories()
 
             if !availableCategories.isEmpty {
-                await showAvailableCategories(availableCategories)
+                await renderer.showAvailableCategories(
+                    availableCategories, picker: outfitService.picker)
             }
 
-            await showUnavailableCategories(categoryInfos)
+            await renderer.showUnavailableCategories(categoryInfos, outfitService: outfitService)
             print("\n")
-            showMenuOptions()
+            renderer.showMenuOptions()
 
             if let input = UI.prompt("Choose a number or letter: ") {
                 await handleChoice(input, availableCategories: availableCategories)
@@ -44,87 +36,13 @@ struct MainMenu {
         }
     }
 
-    private func showOutfitDirectory() {
+    private func showOutfitDirectory() async {
         do {
-            let configService = ConfigService()
-            let config = try configService.load()
-            let absolutePath = URL(filePath: config.root).path(percentEncoded: false)
-            print("📁 \(UI.colorize(absolutePath, UI.cyan))\n")
+            let rootPath = try await outfitService.picker.getRootDirectory()
+            let absolutePath = URL(filePath: rootPath).path(percentEncoded: false)
+            renderer.showOutfitDirectory(path: absolutePath)
         } catch {
             print("")
-        }
-    }
-
-    private func showMenuOptions() {
-        print("📋 \(UI.colorize("Actions", UI.bold + UI.cyan))")
-        print("\(UI.colorize(String(repeating: "─", count: 40), UI.cyan))")
-
-        for choice in MenuChoice.allCases {
-            let keyDisplay =
-                "\(UI.colorize("[", UI.cyan))\(UI.colorize(choice.rawValue.uppercased(), UI.bold + UI.green))\(UI.colorize("]", UI.cyan))"
-            print("  \(keyDisplay) \(choice.description)")
-        }
-    }
-
-    private func showAvailableCategories(_ availableCategories: [CategoryInfo]) async {
-        print("\n📂 \(UI.colorize("Available Categories", UI.bold + UI.blue))")
-        print("\(UI.colorize(String(repeating: "─", count: 40), UI.blue))")
-
-        for (index, info) in availableCategories.enumerated() {
-            do {
-                let state = try await outfitService.picker.getOutfitState(for: info.category)
-                let padding = String(repeating: " ", count: max(0, 20 - info.category.name.count))
-                print(
-                    "  \(UI.colorize("[", UI.cyan))\(UI.colorize("\(index + 1)", UI.bold + UI.green))\(UI.colorize("]", UI.cyan)) 📁 \(info.category.name)\(padding) \(UI.colorize(state.statusText, UI.yellow))"
-                )
-            } catch {
-                let padding = String(repeating: " ", count: max(0, 20 - info.category.name.count))
-                print(
-                    "  \(UI.colorize("[", UI.cyan))\(UI.colorize("\(index + 1)", UI.bold + UI.green))\(UI.colorize("]", UI.cyan)) 📁 \(info.category.name)\(padding) \(UI.colorize(outfitCountText(info.outfitCount), UI.yellow))"
-                )
-            }
-        }
-    }
-
-    private func showUnavailableCategories(_ categoryInfos: [CategoryInfo]) async {
-        let excluded = categoryInfos.filter {
-            if case .userExcluded = $0.state { return true }
-            return false
-        }
-        let noAvatars = categoryInfos.filter {
-            if case .empty = $0.state { return true }
-            if case .noAvatarFiles = $0.state { return true }
-            return false
-        }
-
-        let hasUnavailable = !excluded.isEmpty || !noAvatars.isEmpty
-
-        if hasUnavailable {
-            print("\n\(UI.colorize("⚠️  Unavailable Categories", UI.bold + UI.yellow))")
-            print("\(UI.colorize(String(repeating: "─", count: 40), UI.yellow))")
-        }
-
-        if !excluded.isEmpty {
-            var excludedWithCounts: [String] = []
-            for info in excluded {
-                do {
-                    let actualCount = try await outfitService.getActualOutfitCount(
-                        for: info.category)
-                    excludedWithCounts.append(
-                        "\(info.category.name) (\(outfitCountText(actualCount)))")
-                } catch {
-                    excludedWithCounts.append(info.category.name)
-                }
-            }
-            print(
-                "  🚫 \(UI.colorize("Excluded:", UI.yellow)) \(excludedWithCounts.joined(separator: ", "))"
-            )
-        }
-
-        if !noAvatars.isEmpty {
-            print(
-                "  📄 \(UI.colorize("No outfits found:", UI.yellow)) \(noAvatars.map { $0.category.name }.joined(separator: ", "))"
-            )
         }
     }
 
@@ -196,20 +114,7 @@ struct MainMenu {
                 return
             }
 
-            print("\n\n✅ \(UI.colorize("Worn Outfits", UI.bold + UI.green))")
-            print("\(UI.colorize(String(repeating: "─", count: 40), UI.green))")
-
-            let sortedCategories = wornOutfitsByCategory.sorted { $0.key < $1.key }
-            for (categoryName, outfits) in sortedCategories {
-                print("\n📁 \(UI.colorize(categoryName, UI.bold + UI.blue)) (\(outfits.count) worn)")
-
-                for outfit in outfits {
-                    let cleanName = outfit.fileName.replacingOccurrences(of: ".avatar", with: "")
-                    print("  • \(cleanName)")
-                }
-            }
-
-            print("\n")
+            renderer.showWornOutfits(wornOutfitsByCategory)
             _ = UI.prompt("Press Enter to return to main menu: ")
             await show()
         } catch {
@@ -228,21 +133,7 @@ struct MainMenu {
                 return
             }
 
-            print("\n📄 \(UI.colorize("Unworn Outfits", UI.bold + UI.blue))")
-            print("\(UI.colorize(String(repeating: "─", count: 40), UI.blue))")
-
-            let sortedCategories = unwornOutfitsByCategory.keys.sorted()
-            for categoryName in sortedCategories {
-                let outfits = unwornOutfitsByCategory[categoryName]!
-                print(
-                    "\n📁 \(UI.colorize(categoryName, UI.bold + UI.blue)) (\(outfits.count) unworn)")
-
-                for outfit in outfits {
-                    print("  • \(outfit.fileName)")
-                }
-            }
-
-            print("\n")
+            renderer.showUnwornOutfits(unwornOutfitsByCategory)
             _ = UI.prompt("Press Enter to return to main menu: ")
             await show()
         } catch {
@@ -254,75 +145,74 @@ struct MainMenu {
     private func handleManualSelection() async {
         do {
             let categories = try await outfitService.picker.getCategories()
-            
-            print("\n👕 \(UI.colorize("Choose Your Outfit", UI.bold + UI.cyan))")
-            print("\(UI.colorize(String(repeating: "─", count: 40), UI.cyan))")
-            
-            // Show categories
-            for (index, category) in categories.enumerated() {
-                print("  \(UI.colorize("[", UI.cyan))\(UI.colorize("\(index + 1)", UI.bold + UI.green))\(UI.colorize("]", UI.cyan)) 📁 \(category.name)")
-            }
-            
-            guard let categoryInput = UI.prompt("\nChoose a category (1-\(categories.count)) or 'q' to go back: ") else {
+
+            renderer.showManualSelectionCategories(categories)
+
+            guard
+                let categoryInput = UI.prompt(
+                    "\nChoose a category (1-\(categories.count)) or 'q' to go back: ")
+            else {
                 await show()
                 return
             }
-            
+
             if categoryInput.lowercased() == "q" {
                 await show()
                 return
             }
-            
-            guard let categoryIndex = Int(categoryInput), categoryIndex > 0 && categoryIndex <= categories.count else {
+
+            guard let categoryIndex = Int(categoryInput),
+                categoryIndex > 0 && categoryIndex <= categories.count
+            else {
                 UI.error("Invalid category choice")
                 await handleManualSelection()
                 return
             }
-            
+
             let selectedCategory = categories[categoryIndex - 1]
-            let allOutfits = try await outfitService.picker.showAllOutfits(from: selectedCategory.name)
-            
+            let allOutfits = try await outfitService.picker.showAllOutfits(
+                from: selectedCategory.name)
+
             if allOutfits.isEmpty {
                 UI.info("No outfits found in \(selectedCategory.name)")
                 await handleManualSelection()
                 return
             }
-            
-            print("\n👗 \(UI.colorize("Outfits in \(selectedCategory.name)", UI.bold + UI.blue))")
-            print("\(UI.colorize(String(repeating: "─", count: 40), UI.blue))")
-            
+
             let state = try await outfitService.picker.getOutfitState(for: selectedCategory)
             let wornFileNames = Set(state.wornOutfits.map { $0.fileName })
-            
-            for (index, outfit) in allOutfits.enumerated() {
-                let cleanName = outfit.fileName.replacingOccurrences(of: ".avatar", with: "")
-                let wornStatus = wornFileNames.contains(outfit.fileName) ? " \(UI.colorize("(worn)", UI.yellow))" : ""
-                print("  \(UI.colorize("[", UI.cyan))\(UI.colorize("\(index + 1)", UI.bold + UI.green))\(UI.colorize("]", UI.cyan)) \(cleanName)\(wornStatus)")
-            }
-            
-            guard let outfitInput = UI.prompt("\nChoose an outfit (1-\(allOutfits.count)) or 'q' to go back: ") else {
+
+            renderer.showManualSelectionOutfits(
+                allOutfits, categoryName: selectedCategory.name, wornFileNames: wornFileNames)
+
+            guard
+                let outfitInput = UI.prompt(
+                    "\nChoose an outfit (1-\(allOutfits.count)) or 'q' to go back: ")
+            else {
                 await show()
                 return
             }
-            
+
             if outfitInput.lowercased() == "q" {
                 await handleManualSelection()
                 return
             }
-            
-            guard let outfitIndex = Int(outfitInput), outfitIndex > 0 && outfitIndex <= allOutfits.count else {
+
+            guard let outfitIndex = Int(outfitInput),
+                outfitIndex > 0 && outfitIndex <= allOutfits.count
+            else {
                 UI.error("Invalid outfit choice")
                 await handleManualSelection()
                 return
             }
-            
+
             let selectedOutfit = allOutfits[outfitIndex - 1]
             let isWorn = wornFileNames.contains(selectedOutfit.fileName)
-            
+
             // Present the manually selected outfit
             let result = await presentation.presentManualOutfit(
                 selectedOutfit, category: selectedCategory.name, isWorn: isWorn)
-            
+
             switch result {
             case .worn, .quit:
                 print("👋 Goodbye!\n")
@@ -330,14 +220,10 @@ struct MainMenu {
             case .skipped:
                 await handleManualSelection()
             }
-            
+
         } catch {
             UI.error("Error: \(error.localizedDescription)")
             await show()
         }
-    }
-
-    private func outfitCountText(_ count: Int) -> String {
-        return count == 1 ? "\(count) outfit" : "\(count) outfits"
     }
 }

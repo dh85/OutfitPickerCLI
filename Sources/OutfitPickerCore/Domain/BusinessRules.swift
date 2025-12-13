@@ -68,11 +68,6 @@ public struct BusinessRules {
         try validateCategoryName(outfit.category.name)
     }
 
-    /// Generates status text for category progress
-    public static func generateStatusText(wornCount: Int, totalCount: Int) -> String {
-        return "\(wornCount) of \(totalCount) outfits worn"
-    }
-
     // MARK: - Category State Rules
 
     /// Determines if a category is empty based on avatar and all files

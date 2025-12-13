@@ -15,7 +15,4 @@ public struct CategoryOutfitState: Sendable {
     public var isRotationComplete: Bool {
         BusinessRules.isRotationComplete(wornCount: wornCount, totalCount: totalCount)
     }
-    public var statusText: String {
-        BusinessRules.generateStatusText(wornCount: wornCount, totalCount: totalCount)
-    }
 }

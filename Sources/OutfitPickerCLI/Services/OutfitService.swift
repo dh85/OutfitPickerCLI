@@ -9,7 +9,9 @@ struct OutfitService {
     }
 
     func getAllAvailableOutfits() async throws -> [(key: String, value: OutfitReference)] {
-        return try await picker.getAllAvailableOutfitsWithKeys().map { (key: $0.key, value: $0.outfit) }
+        return try await picker.getAllAvailableOutfitsWithKeys().map {
+            (key: $0.key, value: $0.outfit)
+        }
     }
 
     func getActualOutfitCount(for category: CategoryReference) async throws -> Int {
@@ -31,7 +33,16 @@ struct OutfitService {
     func getUnwornOutfits() async throws -> [String: [OutfitReference]] {
         let states = try await picker.getAllOutfitStates()
         return states.compactMapValues { state in
-            state.availableOutfits.isEmpty ? nil : state.availableOutfits.sorted { $0.fileName < $1.fileName }
+            state.availableOutfits.isEmpty
+                ? nil : state.availableOutfits.sorted { $0.fileName < $1.fileName }
+        }
+    }
+
+    func getAvailableCategories() async throws -> [CategoryInfo] {
+        let categoryInfos = try await picker.getCategoryInfo()
+        return categoryInfos.filter { info in
+            if case .hasOutfits = info.state { return true }
+            return false
         }
     }
 }

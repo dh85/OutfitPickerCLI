@@ -53,11 +53,6 @@ struct BusinessRulesTests {
         #expect(!BusinessRules.isRotationComplete(wornCount: 3, totalCount: 5))
     }
 
-    @Test func generateStatusText_formatsCorrectly() {
-        let status = BusinessRules.generateStatusText(wornCount: 3, totalCount: 10)
-        #expect(status == "3 of 10 outfits worn")
-    }
-
     @Test func filterOutfitFiles_onlyIncludesAvatarFiles() {
         let urls = [
             URL(filePath: "/test/outfit1.avatar"),

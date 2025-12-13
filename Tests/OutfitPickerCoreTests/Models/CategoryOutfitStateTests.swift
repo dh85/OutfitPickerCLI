@@ -114,26 +114,6 @@ struct CategoryOutfitStateTests {
         #expect(state.isRotationComplete == false)
     }
 
-    @Test("statusText delegates to BusinessRules")
-    func statusText() {
-        let category = CategoryReference(name: "casual", path: "/test/casual")
-        let all = [
-            OutfitReference(fileName: "outfit1.avatar", category: category),
-            OutfitReference(fileName: "outfit2.avatar", category: category),
-            OutfitReference(fileName: "outfit3.avatar", category: category),
-        ]
-        let worn = [all[0]]
-        let available = Array(all.suffix(2))
-        let state = CategoryOutfitState(
-            category: category,
-            allOutfits: all,
-            availableOutfits: available,
-            wornOutfits: worn
-        )
-
-        #expect(state.statusText == "1 of 3 outfits worn")
-    }
-
     @Test("handles empty state")
     func emptyState() {
         let category = CategoryReference(name: "casual", path: "/test/casual")
@@ -149,6 +129,5 @@ struct CategoryOutfitStateTests {
         #expect(state.wornCount == 0)
         #expect(state.progressPercentage == 1.0)
         #expect(state.isRotationComplete == true)
-        #expect(state.statusText == "0 of 0 outfits worn")
     }
 }

@@ -12,6 +12,10 @@ public protocol OutfitPickerProtocol: Sendable {
     func resetAllCategories() async throws
     func showAllOutfits(from categoryName: String) async throws -> [OutfitReference]
     func isOutfitWorn(_ fileName: String, in categoryName: String) async throws -> Bool
+    func getRootDirectory() async throws -> String
+    func getConfiguration() async throws -> Config
+    func updateConfiguration(_ config: Config) async throws
+    func factoryReset() async throws
 }
 
 public protocol FileManagerProtocol: Sendable {
@@ -50,9 +54,11 @@ public actor OutfitPicker: OutfitPickerProtocol {
     public init(fileManager: FileManagerProtocol = FileManager.default) {
         self.configService = ConfigService(fileManager: fileManager)
         self.cacheService = CacheService(fileManager: fileManager)
-        let categoryScanner = CategoryScanner(
-            fileManager: fileManager, cacheManager: CacheManager())
-        self.categoryRepository = CategoryRepository(categoryScanner: categoryScanner)
+        let categoryScanner = CategoryScanner(fileManager: fileManager)
+        self.categoryRepository = CategoryRepository(
+            categoryScanner: categoryScanner,
+            cacheManager: CacheManager()
+        )
     }
 
     public func showRandomOutfit(from categoryName: String) async throws -> OutfitReference? {
@@ -347,6 +353,27 @@ extension OutfitPicker {
     {
         try await getOutfitState(for: category.name)
     }
+
+    public func getRootDirectory() async throws -> String {
+        let (config, _) = try await loadConfigAndCache()
+        return config.root
+    }
+
+    public func getConfiguration() async throws -> Config {
+        let (config, _) = try await loadConfigAndCache()
+        return config
+    }
+
+    public func updateConfiguration(_ config: Config) async throws {
+        try configService.save(config)
+        await categoryRepository.invalidateCache()
+    }
+
+    public func factoryReset() async throws {
+        try configService.delete()
+        try cacheService.delete()
+        await categoryRepository.invalidateCache()
+    }
 }
 
 // MARK: - Factory Extensions
@@ -358,9 +385,11 @@ extension OutfitPicker {
         let config = try Config(root: outfitDirectory)
         let configService = ConfigService(fileManager: fileManager)
         try configService.save(config)
-        let categoryScanner = CategoryScanner(
-            fileManager: fileManager, cacheManager: CacheManager())
-        let categoryRepository = CategoryRepository(categoryScanner: categoryScanner)
+        let categoryScanner = CategoryScanner(fileManager: fileManager)
+        let categoryRepository = CategoryRepository(
+            categoryScanner: categoryScanner,
+            cacheManager: CacheManager()
+        )
         return OutfitPicker(configService: configService, categoryRepository: categoryRepository)
     }
 
@@ -369,9 +398,11 @@ extension OutfitPicker {
     ) async throws -> OutfitPicker {
         let configService = ConfigService(fileManager: fileManager)
         _ = try configService.load()
-        let categoryScanner = CategoryScanner(
-            fileManager: fileManager, cacheManager: CacheManager())
-        let categoryRepository = CategoryRepository(categoryScanner: categoryScanner)
+        let categoryScanner = CategoryScanner(fileManager: fileManager)
+        let categoryRepository = CategoryRepository(
+            categoryScanner: categoryScanner,
+            cacheManager: CacheManager()
+        )
         return OutfitPicker(configService: configService, categoryRepository: categoryRepository)
     }
 
@@ -382,9 +413,11 @@ extension OutfitPicker {
         let config = try builder(ConfigBuilder()).build()
         let configService = ConfigService(fileManager: fileManager)
         try configService.save(config)
-        let categoryScanner = CategoryScanner(
-            fileManager: fileManager, cacheManager: CacheManager())
-        let categoryRepository = CategoryRepository(categoryScanner: categoryScanner)
+        let categoryScanner = CategoryScanner(fileManager: fileManager)
+        let categoryRepository = CategoryRepository(
+            categoryScanner: categoryScanner,
+            cacheManager: CacheManager()
+        )
         return OutfitPicker(configService: configService, categoryRepository: categoryRepository)
     }
 }

@@ -30,4 +30,6 @@ public struct FakeCategoryRepository: CategoryRepositoryProtocol {
         
         return []
     }
+
+    public func invalidateCache() async {}
 }
