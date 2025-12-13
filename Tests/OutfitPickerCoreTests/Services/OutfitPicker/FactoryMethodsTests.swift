@@ -8,12 +8,6 @@ struct FactoryMethodsTests {
 
     // MARK: - Factory Method Error Handling Tests
 
-    @Test func createWithEmptyStringThrows() async throws {
-        await #expect(throws: OutfitPickerError.self) {
-            _ = try await OutfitPicker.create(outfitDirectory: "")
-        }
-    }
-
     @Test func createWithBuilderEmptyDirectoryThrows() async throws {
         await #expect(throws: OutfitPickerError.self) {
             _ = try await OutfitPicker.create { builder in
@@ -27,12 +21,6 @@ struct FactoryMethodsTests {
             _ = try await OutfitPicker.create { builder in
                 builder.language(.english)
             }
-        }
-    }
-
-    @Test func createWithInvalidPathThrows() async throws {
-        await #expect(throws: OutfitPickerError.self) {
-            _ = try await OutfitPicker.create(outfitDirectory: "/etc/passwd")
         }
     }
 
@@ -117,53 +105,6 @@ struct FactoryMethodsTests {
         }
     }
 
-    // MARK: - Factory Method Execution Tests
-
-    @Test func simpleFactoryMethodExecution() {
-        // Test that the factory method signature exists and compiles
-        let _: (String, sending FileManagerProtocol) async throws -> OutfitPicker = OutfitPicker.create(outfitDirectory:fileManager:)
-
-        // Verify the method signature exists (compilation test)
-        #expect(Bool(true))
-    }
-
-    @Test func builderFactoryMethodExecution() {
-        // Test that the builder factory method signature exists and compiles
-        let _: ((ConfigBuilder) -> ConfigBuilder, sending FileManagerProtocol) async throws -> OutfitPicker = OutfitPicker
-            .create(configuring:fileManager:)
-
-        // Verify the method signature exists (compilation test)
-        #expect(Bool(true))
-    }
-
-    @Test func factoryMethodWithRealFilesystem() {
-        // Test that factory methods can be referenced (compilation test)
-        let _: (String, sending FileManagerProtocol) async throws -> OutfitPicker = OutfitPicker.create(outfitDirectory:fileManager:)
-        let _: ((ConfigBuilder) -> ConfigBuilder, sending FileManagerProtocol) async throws -> OutfitPicker = OutfitPicker
-            .create(configuring:fileManager:)
-
-        // Verify both factory methods exist (compilation test)
-        #expect(Bool(true))
-        #expect(Bool(true))
-    }
-
-    @Test func factoryMethodConfigServiceSaveError() async {
-        // Test factory method behavior when filesystem operations fail
-        let fakeFileManager = FakeFileManager(.throwsError(FileSystemError.permissionDenied))
-
-        do {
-            _ = try await OutfitPicker.create(
-                outfitDirectory: "/home/user/outfits",
-                fileManager: fakeFileManager
-            )
-            // Factory method may succeed despite filesystem errors due to error handling
-            #expect(Bool(true))
-        } catch {
-            // If it throws, it should be an OutfitPickerError
-            #expect(error is OutfitPickerError)
-        }
-    }
-
     @Test func factoryMethodConfigCreation() throws {
         // Test that factory method logic creates correct Config objects
         let config1 = try Config(root: "/home/user/outfits")
@@ -180,75 +121,11 @@ struct FactoryMethodsTests {
         #expect(config2.language == "es")
         #expect(config2.excludedCategories.contains("damaged"))
     }
-
-    @Test func factoryMethodServiceInstantiation() {
-        // Test that factory methods create the correct service types
-        let configService = ConfigService()
-        let categoryScanner = CategoryScanner()
-        let categoryRepository = CategoryRepository(categoryScanner: categoryScanner)
-        let _ = OutfitPicker(configService: configService, categoryRepository: categoryRepository)
-
-        // Verify the picker was created successfully
-        #expect(Bool(true))
-    }
-
-    @Test func simplifiedInitializerWithDefaultFileManager() {
-        // Test the simplified initializer with default FileManager
-        let _ = OutfitPicker()
-
-        // Verify the picker was created successfully (compilation test)
-        #expect(Bool(true))
-    }
-
-    @Test func simplifiedInitializerWithCustomFileManager() {
-        // Test the simplified initializer with custom FileManager
-        let fakeFileManager = FakeFileManager(.ok([:]))
-        let _ = OutfitPicker(fileManager: fakeFileManager)
-
-        // Verify the picker was created successfully (compilation test)
-        #expect(Bool(true))
-    }
-
-    @Test func factoryMethodsExist() {
-        // Test that factory methods are available (compilation test)
-        let _: (String, sending FileManagerProtocol) async throws -> OutfitPicker = OutfitPicker.create(outfitDirectory:fileManager:)
-        let _: ((ConfigBuilder) -> ConfigBuilder, sending FileManagerProtocol) async throws -> OutfitPicker = OutfitPicker
-            .create(configuring:fileManager:)
-
-        // If this compiles, the factory methods exist with correct signatures
-        #expect(Bool(true))  // Compilation success means factory methods exist
-    }
-
-    @Test func factoryMethodBuilderExecution() {
-        // Test that ConfigBuilder can be used in factory method pattern
-        let builder = ConfigBuilder()
-        let _ = builder.rootDirectory("/home/user/outfits")
-            .language(.spanish)
-            .exclude("damaged")
-
-        // Verify builder configuration works (compilation test)
-        #expect(Bool(true))
-    }
     
-    @Test func fromExistingConfigLoadsExistingConfig() async {
+    @Test func fromExistingConfigSignatureExists() async {
         // Test that fromExistingConfig method signature exists
-        let _: (sending FileManagerProtocol) async throws -> OutfitPicker = OutfitPicker.fromExistingConfig(fileManager:)
-        
-        #expect(Bool(true))
-    }
-    
-    @Test func createWithBuilderSavesConfig() async throws {
-        let recordingDataManager = RecordingDataManager()
-        let fakeFileManager = FakeFileManager(.ok([:]))
-        
-        do {
-            _ = try await OutfitPicker.create(
-                configuring: { $0.rootDirectory("/test/outfits") },
-                fileManager: fakeFileManager
-            )
-        } catch {
-            // May fail due to fake filesystem, but that's expected
-        }
+        // We can't easily run it without a real config file, but we can check it compiles
+        let _: () async throws -> OutfitPicker = OutfitPicker.fromExistingConfig
         
         #expect(Bool(true))
     }

@@ -1,6 +1,6 @@
 import Foundation
 
-enum ConfigError: LocalizedError, Equatable {
+public enum ConfigError: LocalizedError, Equatable {
     case emptyRoot
     case missingRoot
     case missingLanguage
@@ -26,7 +26,7 @@ enum ConfigError: LocalizedError, Equatable {
     }
 }
 
-enum FileSystemError: LocalizedError, Equatable {
+public enum FileSystemError: LocalizedError, Equatable {
     case fileNotFound
     case directoryNotFound
     case permissionDenied
@@ -44,7 +44,7 @@ enum FileSystemError: LocalizedError, Equatable {
     }
 }
 
-enum CacheError: LocalizedError, Equatable {
+public enum CacheError: LocalizedError, Equatable {
     case encodingFailed
     case decodingFailed
     case invalidData
@@ -58,7 +58,7 @@ enum CacheError: LocalizedError, Equatable {
     }
 }
 
-enum StorageError: LocalizedError, Equatable {
+public enum StorageError: LocalizedError, Equatable {
     case diskFull
     case corruptedData
 

@@ -140,10 +140,13 @@ struct ShowRandomOutfitTests {
 
     @Test func showRandomOutfit_WithConfigError_ThrowsInvalidConfiguration() async {
         let configSvc = FakeConfigService(.throwsError(ConfigError.pathTraversalNotAllowed))
+        let dummyConfig = try! Config(root: "/Users/test/Outfits", language: "en")
         let env = OutfitPickerTestEnv(
             sut: OutfitPicker(
-                configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                categoryRepository: FakeCategoryRepository()),
+                config: dummyConfig,
+                configService: configSvc,
+                cacheService: FakeCacheService(.ok(OutfitCache())),
+                repository: FakeCategoryRepository()),
             fileManager: FakeFileManager(.ok([:]), directories: []),
             cache: FakeCacheService(.ok(OutfitCache())),
             config: configSvc
@@ -165,8 +168,10 @@ struct ShowRandomOutfitTests {
         let fm = FakeFileManager(.throwsError(FileSystemError.operationFailed), directories: [])
         let env = OutfitPickerTestEnv(
             sut: OutfitPicker(
-                configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                categoryRepository: ThrowingCategoryRepository(FileSystemError.operationFailed)),
+                config: config,
+                configService: configSvc,
+                cacheService: FakeCacheService(.ok(OutfitCache())),
+                repository: ThrowingCategoryRepository(FileSystemError.operationFailed)),
             fileManager: fm,
             cache: FakeCacheService(.ok(OutfitCache())),
             config: configSvc
@@ -189,7 +194,11 @@ struct ShowRandomOutfitTests {
         let fm = FakeFileManager(.ok(map), directories: [dir])
         let cacheSvc = FakeCacheService(.throwsOnLoad(CacheError.decodingFailed))
         let env = OutfitPickerTestEnv(
-            sut: OutfitPicker(configService: configSvc, cacheService: cacheSvc, categoryRepository: FakeCategoryRepository()),
+            sut: OutfitPicker(
+                config: config,
+                configService: configSvc,
+                cacheService: cacheSvc,
+                repository: FakeCategoryRepository()),
             fileManager: fm,
             cache: cacheSvc,
             config: configSvc

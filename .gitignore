@@ -55,3 +55,7 @@ test-outfits/
 # Local configuration and cache files
 config.json
 cache.json
+
+# Rust
+target/
+**/*.rs.bk

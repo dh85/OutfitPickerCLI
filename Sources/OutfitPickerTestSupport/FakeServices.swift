@@ -127,10 +127,10 @@ public final class FakeCacheService: CacheServiceProtocol, Sendable {
     /// - Throws: Never throws in this fake implementation
     public func save(_ cache: OutfitCache) throws { _saved.withValue { $0.append(cache) } }
 
-    /// Not implemented - will cause fatal error if called.
+    /// Clears the saved cache for test verification.
     ///
-    /// - Throws: Never throws (fatal error instead)
-    public func delete() throws { fatalError("not used") }
+    /// - Throws: Never throws in this fake implementation
+    public func delete() throws { _saved.withValue { $0.removeAll() } }
 
     /// Not implemented - will cause fatal error if called.
     ///
