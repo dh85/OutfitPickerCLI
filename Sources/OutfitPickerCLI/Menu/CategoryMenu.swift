@@ -5,7 +5,6 @@ struct CategoryMenu {
     let outfitService: OutfitService
     let presentation: OutfitPresentation
     let category: CategoryReference
-    var session = OutfitSession()
 
     func show() async {
         do {
@@ -39,36 +38,27 @@ struct CategoryMenu {
     }
 
     private func handleOutfitLoop() async {
-        var session = self.session
-
         while true {
             do {
-                let availableOutfits = try await outfitService.getAvailableOutfits(for: category)
-                let unseenOutfits = availableOutfits.filter {
-                    !session.isCategorySkipped($0.fileName, category: category.name)
-                }
-
-                let outfitsToChooseFrom = unseenOutfits.isEmpty ? availableOutfits : unseenOutfits
-
-                if outfitsToChooseFrom.isEmpty {
+                guard
+                    let outfit = try await outfitService.picker.showNextUniqueRandomOutfit(
+                        from: category.name)
+                else {
                     UI.info("No outfits available in \(category.name)")
                     await MainMenu(outfitService: outfitService, presentation: presentation).show()
                     return
                 }
 
-                let outfit = outfitsToChooseFrom.randomElement()!
                 let result = await presentation.presentOutfitWithChoice(outfit)
 
                 switch result {
                 case .worn:
-                    session.resetCategory(category.name)
+                    // Session is reset in Core's wearOutfit method
                     await MainMenu(outfitService: outfitService, presentation: presentation).show()
                     return
                 case .skipped:
-                    session.addCategorySkipped(outfit.fileName, category: category.name)
-                    if unseenOutfits.count <= 1 {
-                        session.resetCategory(category.name)
-                    }
+                    // Continue to next iteration - Core tracks the shown outfit
+                    continue
                 case .quit:
                     print("👋 Goodbye!\n")
                     return

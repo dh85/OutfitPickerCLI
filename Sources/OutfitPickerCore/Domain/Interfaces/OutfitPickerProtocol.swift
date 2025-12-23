@@ -16,4 +16,10 @@ public protocol OutfitPickerProtocol: Sendable {
     func getConfiguration() async throws -> Config
     func updateConfiguration(_ config: Config) async throws
     func factoryReset() async throws
+
+    // Session-aware outfit selection
+    func showNextUniqueRandomOutfit() async throws -> OutfitReference?
+    func showNextUniqueRandomOutfit(from categoryName: String) async throws -> OutfitReference?
+    func resetGlobalSession() async
+    func resetCategorySession(_ categoryName: String) async
 }

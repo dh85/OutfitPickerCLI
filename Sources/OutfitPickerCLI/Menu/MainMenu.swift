@@ -5,7 +5,6 @@ struct MainMenu {
     let outfitService: OutfitService
     let presentation: OutfitPresentation
     let renderer = MenuRenderer()
-    var session = OutfitSession()
 
     func show() async {
         do {
@@ -76,36 +75,10 @@ struct MainMenu {
     }
 
     private func handleRandomOutfit() async {
-        var session = self.session
-
         while true {
             do {
-                // Get all available outfits across categories
-                let allAvailableOutfits = try await getAllAvailableOutfits()
-
-                if allAvailableOutfits.isEmpty {
-                    UI.info("No outfits available")
-                    await show()
-                    return
-                }
-
-                // Filter out already shown outfits
-                let unseenOutfits = allAvailableOutfits.filter { outfit in
-                    let outfitKey = "\(outfit.category.name)/\(outfit.fileName)"
-                    return !session.isGloballySkipped(outfitKey)
-                }
-
-                // If all outfits have been shown, reset the tracking
-                let outfitsToChooseFrom: [OutfitReference]
-                if unseenOutfits.isEmpty {
-                    session.resetGlobal()
-                    outfitsToChooseFrom = allAvailableOutfits
-                } else {
-                    outfitsToChooseFrom = unseenOutfits
-                }
-
-                // Pick a random outfit from the filtered list
-                guard let randomOutfit = outfitsToChooseFrom.randomElement() else {
+                guard let randomOutfit = try await outfitService.picker.showNextUniqueRandomOutfit()
+                else {
                     UI.info("No outfits available")
                     await show()
                     return
@@ -116,17 +89,15 @@ struct MainMenu {
 
                 switch result {
                 case .worn:
-                    session.resetGlobal()
+                    // Session is reset in Core's wearOutfit method
                     await show()
                     return
                 case .quit:
                     print("👋 Goodbye!\n")
                     return
                 case .skipped:
-                    // Mark this outfit as shown and continue loop
-                    let outfitKey = "\(randomOutfit.category.name)/\(randomOutfit.fileName)"
-                    session.addSkipped(outfitKey)
-                // Continue to next iteration of while loop
+                    // Continue to next iteration - Core tracks the shown outfit
+                    continue
                 }
             } catch {
                 UI.error("Error: \(error.localizedDescription)")

@@ -10,6 +10,10 @@ public actor OutfitPicker: OutfitPickerProtocol {
     private let cacheService: CacheServiceProtocol
     private let repository: CategoryRepositoryProtocol
 
+    // Session state for tracking shown outfits
+    private var globalShownOutfits: Set<String> = []
+    private var categoryShownOutfits: [String: Set<String>] = [:]
+
     public init(
         config: Config,
         configService: ConfigServiceProtocol,
@@ -85,6 +89,9 @@ public actor OutfitPicker: OutfitPickerProtocol {
     public func wearOutfit(_ outfit: OutfitReference) async throws {
         do {
             try await wearOutfitUseCase.execute(request: .init(outfit: outfit))
+            // Reset session tracking when an outfit is worn
+            globalShownOutfits.removeAll()
+            categoryShownOutfits[outfit.category.name]?.removeAll()
         } catch {
             throw ErrorMapper.mapError(error)
         }
@@ -362,5 +369,137 @@ public actor OutfitPicker: OutfitPickerProtocol {
         } catch {
             throw ErrorMapper.mapError(error)
         }
+    }
+
+    // MARK: - Session Management
+
+    /// Shows next unique random outfit across all categories, filtering out already shown outfits
+    public func showNextUniqueRandomOutfit() async throws -> OutfitReference? {
+        do {
+            let config = try configService.load()
+            let cache = try cacheService.load()
+            let categoryInfos = try await getCategoriesUseCase.execute()
+
+            let hasOutfitsInfos = categoryInfos.filter { info in
+                if case .hasOutfits = info.state { return true }
+                return false
+            }
+
+            var allAvailableOutfits: [(String, String, FileEntry)] = []
+
+            for info in hasOutfitsInfos {
+                let categoryPath = (config.root as NSString).appendingPathComponent(
+                    info.category.name)
+                let categoryName = info.category.name
+                let categoryCache = cache.categories[categoryName] ?? CategoryCache(totalOutfits: 0)
+
+                let files = try await repository.getOutfits(in: categoryPath)
+                if files.isEmpty { continue }
+
+                let availableFiles = BusinessRules.filterAvailableOutfits(
+                    from: files,
+                    wornOutfits: categoryCache.wornOutfits
+                )
+
+                for file in availableFiles {
+                    allAvailableOutfits.append((categoryName, categoryPath, file))
+                }
+            }
+
+            guard !allAvailableOutfits.isEmpty else { return nil }
+
+            // Filter out shown outfits
+            let unseenOutfits = allAvailableOutfits.filter { (categoryName, _, file) in
+                let outfitKey = "\(categoryName)/\(file.fileName)"
+                return !globalShownOutfits.contains(outfitKey)
+            }
+
+            // If all have been shown, reset and use all available
+            let outfitsToChooseFrom: [(String, String, FileEntry)]
+            if unseenOutfits.isEmpty {
+                globalShownOutfits.removeAll()
+                outfitsToChooseFrom = allAvailableOutfits
+            } else {
+                outfitsToChooseFrom = unseenOutfits
+            }
+
+            guard let (categoryName, categoryPath, file) = outfitsToChooseFrom.randomElement()
+            else {
+                return nil
+            }
+
+            // Mark as shown
+            let outfitKey = "\(categoryName)/\(file.fileName)"
+            globalShownOutfits.insert(outfitKey)
+
+            return OutfitReference(
+                fileName: file.fileName,
+                category: CategoryReference(name: categoryName, path: categoryPath)
+            )
+        } catch {
+            throw ErrorMapper.mapError(error)
+        }
+    }
+
+    /// Shows next unique random outfit from a specific category, filtering out already shown outfits
+    public func showNextUniqueRandomOutfit(from categoryName: String) async throws
+        -> OutfitReference?
+    {
+        do {
+            let config = try configService.load()
+            let cache = try cacheService.load()
+            let categoryPath = (config.root as NSString).appendingPathComponent(categoryName)
+            let categoryCache = cache.categories[categoryName] ?? CategoryCache(totalOutfits: 0)
+
+            let files = try await repository.getOutfits(in: categoryPath)
+            guard !files.isEmpty else { return nil }
+
+            let availableFiles = BusinessRules.filterAvailableOutfits(
+                from: files,
+                wornOutfits: categoryCache.wornOutfits
+            )
+
+            guard !availableFiles.isEmpty else { return nil }
+
+            // Get or create shown set for this category
+            var shownInCategory = categoryShownOutfits[categoryName] ?? []
+
+            // Filter out shown outfits
+            let unseenOutfits = availableFiles.filter { file in
+                !shownInCategory.contains(file.fileName)
+            }
+
+            // If all have been shown, reset for this category
+            let outfitsToChooseFrom: [FileEntry]
+            if unseenOutfits.isEmpty {
+                shownInCategory.removeAll()
+                outfitsToChooseFrom = availableFiles
+            } else {
+                outfitsToChooseFrom = unseenOutfits
+            }
+
+            guard let file = outfitsToChooseFrom.randomElement() else { return nil }
+
+            // Mark as shown
+            shownInCategory.insert(file.fileName)
+            categoryShownOutfits[categoryName] = shownInCategory
+
+            return OutfitReference(
+                fileName: file.fileName,
+                category: CategoryReference(name: categoryName, path: categoryPath)
+            )
+        } catch {
+            throw ErrorMapper.mapError(error)
+        }
+    }
+
+    /// Resets the global session, clearing all shown outfit tracking
+    public func resetGlobalSession() async {
+        globalShownOutfits.removeAll()
+    }
+
+    /// Resets the session for a specific category, clearing shown outfit tracking
+    public func resetCategorySession(_ categoryName: String) async {
+        categoryShownOutfits[categoryName]?.removeAll()
     }
 }
