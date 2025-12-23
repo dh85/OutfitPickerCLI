@@ -76,32 +76,79 @@ struct MainMenu {
     }
 
     private func handleRandomOutfit() async {
-        do {
-            guard
-                let randomOutfit = try await outfitService.picker.showRandomOutfitAcrossCategories()
-            else {
-                UI.info("No outfits available")
+        var session = self.session
+
+        while true {
+            do {
+                // Get all available outfits across categories
+                let allAvailableOutfits = try await getAllAvailableOutfits()
+
+                if allAvailableOutfits.isEmpty {
+                    UI.info("No outfits available")
+                    await show()
+                    return
+                }
+
+                // Filter out already shown outfits
+                let unseenOutfits = allAvailableOutfits.filter { outfit in
+                    let outfitKey = "\(outfit.category.name)/\(outfit.fileName)"
+                    return !session.isGloballySkipped(outfitKey)
+                }
+
+                // If all outfits have been shown, reset the tracking
+                let outfitsToChooseFrom: [OutfitReference]
+                if unseenOutfits.isEmpty {
+                    session.resetGlobal()
+                    outfitsToChooseFrom = allAvailableOutfits
+                } else {
+                    outfitsToChooseFrom = unseenOutfits
+                }
+
+                // Pick a random outfit from the filtered list
+                guard let randomOutfit = outfitsToChooseFrom.randomElement() else {
+                    UI.info("No outfits available")
+                    await show()
+                    return
+                }
+
+                let result = await presentation.presentOutfitWithCategoryChoice(
+                    randomOutfit, category: randomOutfit.category.name)
+
+                switch result {
+                case .worn:
+                    session.resetGlobal()
+                    await show()
+                    return
+                case .quit:
+                    print("👋 Goodbye!\n")
+                    return
+                case .skipped:
+                    // Mark this outfit as shown and continue loop
+                    let outfitKey = "\(randomOutfit.category.name)/\(randomOutfit.fileName)"
+                    session.addSkipped(outfitKey)
+                // Continue to next iteration of while loop
+                }
+            } catch {
+                UI.error("Error: \(error.localizedDescription)")
                 await show()
                 return
             }
-
-            let result = await presentation.presentOutfitWithCategoryChoice(
-                randomOutfit, category: randomOutfit.category.name)
-
-            switch result {
-            case .worn:
-                await show()
-                return
-            case .quit:
-                print("👋 Goodbye!\n")
-                return
-            case .skipped:
-                await handleRandomOutfit()  // Try again with another random outfit
-            }
-        } catch {
-            UI.error("Error: \(error.localizedDescription)")
-            await show()
         }
+    }
+
+    private func getAllAvailableOutfits() async throws -> [OutfitReference] {
+        let categoryInfos = try await outfitService.picker.getCategoryInfo()
+        var allOutfits: [OutfitReference] = []
+
+        for info in categoryInfos {
+            if case .hasOutfits = info.state {
+                let availableOutfits = try await outfitService.getAvailableOutfits(
+                    for: info.category)
+                allOutfits.append(contentsOf: availableOutfits)
+            }
+        }
+
+        return allOutfits
     }
 
     private func showWornMenu() async {
