@@ -34,7 +34,7 @@ enum AdvancedChoice: String, CaseIterable {
         switch self {
         case .changePath: return "Change outfit path"
         case .changeLanguage: return "Change language"
-        case .changeExcluded: return "Change excluded categories"
+        case .changeExcluded: return "Manage categories excluded from random selection"
         case .resetCategory: return "Reset worn outfits for category"
         case .resetAll: return "Reset all worn outfits"
         case .resetSettings: return "Reset user settings and worn outfits"

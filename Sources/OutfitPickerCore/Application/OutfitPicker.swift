@@ -332,9 +332,10 @@ public actor OutfitPicker: OutfitPickerProtocol {
             let cache = try cacheService.load()
             let categoryInfos = try await getCategoriesUseCase.execute()
 
+            // Filter to categories with outfits AND not excluded from random selection
             let hasOutfitsInfos = categoryInfos.filter { info in
-                if case .hasOutfits = info.state { return true }
-                return false
+                guard case .hasOutfits = info.state else { return false }
+                return !config.excludedCategories.contains(info.category.name)
             }
 
             var availableCategories: [(String, String, [FileEntry])] = []
@@ -380,9 +381,10 @@ public actor OutfitPicker: OutfitPickerProtocol {
             let cache = try cacheService.load()
             let categoryInfos = try await getCategoriesUseCase.execute()
 
+            // Filter to categories with outfits AND not excluded from random selection
             let hasOutfitsInfos = categoryInfos.filter { info in
-                if case .hasOutfits = info.state { return true }
-                return false
+                guard case .hasOutfits = info.state else { return false }
+                return !config.excludedCategories.contains(info.category.name)
             }
 
             var allAvailableOutfits: [(String, String, FileEntry)] = []

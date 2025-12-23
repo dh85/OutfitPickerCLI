@@ -156,8 +156,9 @@ struct AdvancedMenu {
             print("\n🚫 \(UI.colorize("Manage Excluded Categories", UI.bold + UI.cyan))")
             print(UI.colorize(String(repeating: "─", count: 40), UI.cyan))
             print(
-                "\nExcluded categories won't appear in random outfit selection across all categories."
+                "\nExcluded categories won't appear in \(UI.colorize("random across all categories", UI.bold)) selection."
             )
+            print("They will still be available in the category menu for manual selection.")
 
             if !excludedList.isEmpty {
                 print("\n📋 Currently Excluded:")
