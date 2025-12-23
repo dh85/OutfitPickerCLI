@@ -181,9 +181,10 @@ struct RandomOutfitAcrossCategoriesTests {
         let categoryScanner = CategoryScanner(fileManager: fm)
         let categoryRepository = CategoryRepository(categoryScanner: categoryScanner)
         let sut = OutfitPicker(
+            config: config,
             configService: configSvc,
             cacheService: cacheSvc,
-            categoryRepository: categoryRepository
+            repository: categoryRepository
         )
 
         do {

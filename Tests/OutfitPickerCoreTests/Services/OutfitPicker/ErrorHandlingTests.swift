@@ -87,16 +87,17 @@ struct ErrorHandlingTests {
         }
     }
 
-
-
     // MARK: - Error Propagation Tests
 
     @Test func showRandomOutfit_PreservesSpecificErrors() async {
         let configSvc = FakeConfigService(.throwsError(ConfigError.pathTraversalNotAllowed))
+        let dummyConfig = try! Config(root: "/Users/test/Outfits", language: "en")
         let env = OutfitPickerTestEnv(
             sut: OutfitPicker(
-                configService: configSvc, cacheService: FakeCacheService(.ok(OutfitCache())),
-                categoryRepository: FakeCategoryRepository()),
+                config: dummyConfig,
+                configService: configSvc,
+                cacheService: FakeCacheService(.ok(OutfitCache())),
+                repository: FakeCategoryRepository()),
             fileManager: FakeFileManager(.ok([:]), directories: []),
             cache: FakeCacheService(.ok(OutfitCache())),
             config: configSvc
@@ -121,7 +122,11 @@ struct ErrorHandlingTests {
 
         let cacheSvc = FakeCacheService(.throwsOnLoad(CacheError.decodingFailed))
         let env = OutfitPickerTestEnv(
-            sut: OutfitPicker(configService: configSvc, cacheService: cacheSvc, categoryRepository: FakeCategoryRepository()),
+            sut: OutfitPicker(
+                config: config,
+                configService: configSvc,
+                cacheService: cacheSvc,
+                repository: FakeCategoryRepository()),
             fileManager: fm,
             cache: cacheSvc,
             config: configSvc
@@ -138,14 +143,15 @@ struct ErrorHandlingTests {
         }
     }
 
-
-
     @Test func isOutfitWorn_MapsGenericError() async {
         let cacheSvc = FakeCacheService(.throwsOnLoad(CacheError.decodingFailed))
+        let dummyConfig = try! Config(root: safeRoot, language: "en")
         let env = OutfitPickerTestEnv(
             sut: OutfitPicker(
-                configService: FakeConfigService(.ok(try! Config(root: safeRoot))),
-                cacheService: cacheSvc, categoryRepository: FakeCategoryRepository()),
+                config: dummyConfig,
+                configService: FakeConfigService(.ok(dummyConfig)),
+                cacheService: cacheSvc,
+                repository: FakeCategoryRepository()),
             fileManager: FakeFileManager(.ok([:]), directories: []),
             cache: cacheSvc,
             config: FakeConfigService(.ok(try! Config(root: safeRoot)))
@@ -160,6 +166,5 @@ struct ErrorHandlingTests {
             Issue.record("Expected cacheError, got \(error)")
         }
     }
-
 
 }

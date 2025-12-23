@@ -12,24 +12,30 @@ struct CategoryInfoTests {
     @Test
     func mixedStates_excludedEmptyNoAvatarAndHasOutfits_sortedAlphabetically() async throws {
         let categoryInfos = [
-            CategoryInfo(category: CategoryReference(name: "A_Empty", path: "\(root)/A_Empty"), state: .empty, outfitCount: 0),
-            CategoryInfo(category: CategoryReference(name: "B_Excluded", path: "\(root)/B_Excluded"), state: .userExcluded, outfitCount: 0),
-            CategoryInfo(category: CategoryReference(name: "C_NoAvatar", path: "\(root)/C_NoAvatar"), state: .noAvatarFiles, outfitCount: 0),
-            CategoryInfo(category: CategoryReference(name: "D_HasOutfits", path: "\(root)/D_HasOutfits"), state: .hasOutfits, outfitCount: 2)
+            CategoryInfo(
+                category: CategoryReference(name: "A_Empty", path: "\(root)/A_Empty"),
+                state: .empty, outfitCount: 0),
+            CategoryInfo(
+                category: CategoryReference(name: "B_Excluded", path: "\(root)/B_Excluded"),
+                state: .userExcluded, outfitCount: 0),
+            CategoryInfo(
+                category: CategoryReference(name: "C_NoAvatar", path: "\(root)/C_NoAvatar"),
+                state: .noAvatarFiles, outfitCount: 0),
+            CategoryInfo(
+                category: CategoryReference(name: "D_HasOutfits", path: "\(root)/D_HasOutfits"),
+                state: .hasOutfits, outfitCount: 2),
         ]
         let categoryRepository = FakeCategoryRepository(categoryInfos: categoryInfos)
+        let config = try Config(
+            root: root,
+            language: "en",
+            excludedCategories: ["B_Excluded"]
+        )
         let sut = OutfitPicker(
-            configService: FakeConfigService(
-                .ok(
-                    try Config(
-                        root: root,
-                        language: "en",
-                        excludedCategories: ["B_Excluded"]
-                    )
-                )
-            ),
+            config: config,
+            configService: FakeConfigService(.ok(config)),
             cacheService: FakeCacheService(.ok(OutfitCache())),
-            categoryRepository: categoryRepository
+            repository: categoryRepository
         )
 
         let infos = try await sut.getCategoryInfo()
@@ -58,12 +64,12 @@ struct CategoryInfoTests {
     @Test
     func noChildrenAtRoot_returnsEmptyArray() async throws {
         let categoryRepository = FakeCategoryRepository(categoryInfos: [])
+        let config = try Config(root: root, language: "en")
         let sut = OutfitPicker(
-            configService: FakeConfigService(
-                .ok(try Config(root: root, language: "en"))
-            ),
+            config: config,
+            configService: FakeConfigService(.ok(config)),
             cacheService: FakeCacheService(.ok(OutfitCache())),
-            categoryRepository: categoryRepository
+            repository: categoryRepository
         )
 
         let infos = try await sut.getCategoryInfo()
@@ -76,10 +82,12 @@ struct CategoryInfoTests {
         let configSvc = FakeConfigService(
             .throwsError(ConfigError.pathTraversalNotAllowed)
         )
+        let dummyConfig = try! Config(root: "/Users/test/outfits", language: "en")
         let sut = OutfitPicker(
+            config: dummyConfig,
             configService: configSvc,
             cacheService: FakeCacheService(.ok(OutfitCache())),
-            categoryRepository: FakeCategoryRepository()
+            repository: FakeCategoryRepository()
         )
 
         do {
@@ -99,9 +107,10 @@ struct CategoryInfoTests {
         )
         let categoryRepository = ThrowingCategoryRepository(FileSystemError.operationFailed)
         let sut = OutfitPicker(
+            config: config,
             configService: configSvc,
             cacheService: FakeCacheService(.ok(OutfitCache())),
-            categoryRepository: categoryRepository
+            repository: categoryRepository
         )
 
         do {

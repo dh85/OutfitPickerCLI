@@ -53,7 +53,7 @@ public struct CategoryCache: Codable, Equatable, Sendable {
 }
 
 public struct OutfitCache: Codable, Equatable, Sendable {
-    public let categories: [String: CategoryCache]
+    public var categories: [String: CategoryCache]
     public let version: Int
     public let createdAt: Date
 

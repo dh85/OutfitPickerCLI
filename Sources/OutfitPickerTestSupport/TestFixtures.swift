@@ -58,18 +58,23 @@ public func makeSingleCategorySUT(
     let cacheSvc = FakeCacheService(.ok(cache))
 
     let categoryRepository = FakeCategoryRepository(
-        categoryInfos: [CategoryInfo(
-            category: CategoryReference(name: category, path: "\(root)/\(category)"),
-            state: .hasOutfits,
-            outfitCount: files.count
-        )],
-        outfitsByPath: ["\(root)/\(category)": files.map { FileEntry(filePath: "\(root)/\(category)/\($0)") }]
+        categoryInfos: [
+            CategoryInfo(
+                category: CategoryReference(name: category, path: "\(root)/\(category)"),
+                state: .hasOutfits,
+                outfitCount: files.count
+            )
+        ],
+        outfitsByPath: [
+            "\(root)/\(category)": files.map { FileEntry(filePath: "\(root)/\(category)/\($0)") }
+        ]
     )
-    
+
     let sut = OutfitPicker(
+        config: config,
         configService: configSvc,
         cacheService: cacheSvc,
-        categoryRepository: categoryRepository
+        repository: categoryRepository
     )
     return .init(sut: sut, fileManager: fm, cache: cacheSvc, config: configSvc)
 }
@@ -138,22 +143,23 @@ public func makeAcrossCategoriesSUT(
             outfitCount: files.count
         )
     }
-    
+
     let outfitsByPath = categories.reduce(into: [String: [FileEntry]]()) { result, pair in
         let (name, files) = pair
         let path = "\(root)/\(name)"
         result[path] = files.map { FileEntry(filePath: "\(path)/\($0)") }
     }
-    
+
     let categoryRepository = FakeCategoryRepository(
         categoryInfos: categoryInfos,
         outfitsByPath: outfitsByPath
     )
-    
+
     let sut = OutfitPicker(
+        config: config,
         configService: configSvc,
         cacheService: cacheSvc,
-        categoryRepository: categoryRepository
+        repository: categoryRepository
     )
     return .init(sut: sut, fileManager: fm, cache: cacheSvc, config: configSvc)
 }
