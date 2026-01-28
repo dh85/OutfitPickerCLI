@@ -50,12 +50,12 @@ func validateTraversal(path string) error {
 	if strings.Contains(path, "..") {
 		return errors.ErrPathTraversal
 	}
-	
+
 	cleaned := filepath.Clean(path)
 	if strings.Count(path, "/") > strings.Count(cleaned, "/")+2 {
 		return errors.ErrPathTraversal
 	}
-	
+
 	return nil
 }
 

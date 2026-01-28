@@ -52,7 +52,7 @@ func TestCategoryCache_IsRotationComplete(t *testing.T) {
 
 func TestCategoryCache_Adding(t *testing.T) {
 	cache := NewCategoryCache(5)
-	
+
 	updated := cache.Adding("outfit1.avatar")
 	if len(updated.WornOutfits) != 1 {
 		t.Errorf("WornOutfits length = %v, want 1", len(updated.WornOutfits))

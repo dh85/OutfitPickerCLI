@@ -69,11 +69,11 @@ func TestNewConfig(t *testing.T) {
 func TestConfig_WithExcludedCategories(t *testing.T) {
 	excluded := map[string]bool{"formal": true, "winter": true}
 	config, err := NewConfig("/home/user/outfits", nil, excluded, nil, nil)
-	
+
 	if err != nil {
 		t.Fatalf("NewConfig() error = %v", err)
 	}
-	
+
 	if len(config.ExcludedCategories) != 2 {
 		t.Errorf("ExcludedCategories length = %v, want 2", len(config.ExcludedCategories))
 	}
@@ -85,11 +85,11 @@ func TestConfig_WithExcludedCategories(t *testing.T) {
 func TestConfig_WithKnownCategories(t *testing.T) {
 	known := map[string]bool{"casual": true, "formal": true}
 	config, err := NewConfig("/home/user/outfits", nil, nil, known, nil)
-	
+
 	if err != nil {
 		t.Fatalf("NewConfig() error = %v", err)
 	}
-	
+
 	if len(config.KnownCategories) != 2 {
 		t.Errorf("KnownCategories length = %v, want 2", len(config.KnownCategories))
 	}
@@ -100,11 +100,11 @@ func TestConfig_WithKnownCategoryFiles(t *testing.T) {
 		"casual": {"outfit1.avatar": true, "outfit2.avatar": true},
 	}
 	config, err := NewConfig("/home/user/outfits", nil, nil, nil, files)
-	
+
 	if err != nil {
 		t.Fatalf("NewConfig() error = %v", err)
 	}
-	
+
 	if len(config.KnownCategoryFiles) != 1 {
 		t.Errorf("KnownCategoryFiles length = %v, want 1", len(config.KnownCategoryFiles))
 	}

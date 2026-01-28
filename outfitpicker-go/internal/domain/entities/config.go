@@ -11,11 +11,11 @@ const DefaultLanguage = "en"
 
 // Config represents the application configuration.
 type Config struct {
-	Root                string                       `json:"root"`
-	Language            string                       `json:"language"`
-	ExcludedCategories  map[string]bool              `json:"excludedCategories"`
-	KnownCategories     map[string]bool              `json:"knownCategories"`
-	KnownCategoryFiles  map[string]map[string]bool   `json:"knownCategoryFiles"`
+	Root               string                     `json:"root"`
+	Language           string                     `json:"language"`
+	ExcludedCategories map[string]bool            `json:"excludedCategories"`
+	KnownCategories    map[string]bool            `json:"knownCategories"`
+	KnownCategoryFiles map[string]map[string]bool `json:"knownCategoryFiles"`
 }
 
 // NewConfig creates and validates a new configuration.

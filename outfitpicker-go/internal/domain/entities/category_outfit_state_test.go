@@ -34,7 +34,7 @@ func TestCategoryOutfitState_Counts(t *testing.T) {
 		NewOutfitReference("outfit1.avatar", category),
 		NewOutfitReference("outfit2.avatar", category),
 	}
-	
+
 	state := NewCategoryOutfitState(category, all, all[:1], all[1:])
 
 	if got := state.TotalCount(); got != 2 {
@@ -50,7 +50,7 @@ func TestCategoryOutfitState_Counts(t *testing.T) {
 
 func TestCategoryOutfitState_ProgressPercentage(t *testing.T) {
 	category := NewCategoryReference("casual", "/path/to/casual")
-	
+
 	tests := []struct {
 		name       string
 		totalCount int
@@ -70,7 +70,7 @@ func TestCategoryOutfitState_ProgressPercentage(t *testing.T) {
 				all[i] = NewOutfitReference("outfit.avatar", category)
 			}
 			state := NewCategoryOutfitState(category, all, all[tt.wornCount:], all[:tt.wornCount])
-			
+
 			if got := state.ProgressPercentage(); got != tt.want {
 				t.Errorf("ProgressPercentage() = %v, want %v", got, tt.want)
 			}
@@ -97,7 +97,7 @@ func TestCategoryOutfitState_IsRotationComplete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			state := NewCategoryOutfitState(category, all, all[tt.wornCount:], all[:tt.wornCount])
-			
+
 			if got := state.IsRotationComplete(); got != tt.want {
 				t.Errorf("IsRotationComplete() = %v, want %v", got, tt.want)
 			}

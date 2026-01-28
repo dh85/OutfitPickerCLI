@@ -5,9 +5,21 @@ import (
 	"testing"
 )
 
+func TestSelectionTarget_Interface(t *testing.T) {
+	category := NewCategoryReference("casual", "/path/to/casual")
+
+	var _ SelectionTarget = SelectionTargetCategory{Category: category}
+	var _ SelectionTarget = SelectionTargetAllCategories{}
+	var _ SelectionTarget = SelectionTargetCategories{Categories: []CategoryReference{category}}
+
+	SelectionTargetCategory{Category: category}.isSelectionTarget()
+	SelectionTargetAllCategories{}.isSelectionTarget()
+	SelectionTargetCategories{Categories: []CategoryReference{category}}.isSelectionTarget()
+}
+
 func TestSelectionTarget_JSONMarshaling(t *testing.T) {
 	category := NewCategoryReference("casual", "/path/to/casual")
-	
+
 	tests := []struct {
 		name   string
 		target SelectionTarget
@@ -64,7 +76,7 @@ func TestRotationProgress_Progress(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			category := NewCategoryReference("test", "/path")
 			progress := NewRotationProgress(category, tt.wornCount, tt.totalCount)
-			
+
 			if got := progress.Progress(); got != tt.want {
 				t.Errorf("Progress() = %v, want %v", got, tt.want)
 			}
@@ -74,7 +86,7 @@ func TestRotationProgress_Progress(t *testing.T) {
 
 func TestRotationProgress_IsComplete(t *testing.T) {
 	category := NewCategoryReference("test", "/path")
-	
+
 	tests := []struct {
 		name       string
 		wornCount  int
@@ -89,7 +101,7 @@ func TestRotationProgress_IsComplete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			progress := NewRotationProgress(category, tt.wornCount, tt.totalCount)
-			
+
 			if got := progress.IsComplete(); got != tt.want {
 				t.Errorf("IsComplete() = %v, want %v", got, tt.want)
 			}
@@ -99,7 +111,7 @@ func TestRotationProgress_IsComplete(t *testing.T) {
 
 func TestRotationProgress_AvailableCount(t *testing.T) {
 	category := NewCategoryReference("test", "/path")
-	
+
 	tests := []struct {
 		name       string
 		wornCount  int
@@ -113,7 +125,7 @@ func TestRotationProgress_AvailableCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			progress := NewRotationProgress(category, tt.wornCount, tt.totalCount)
-			
+
 			if got := progress.AvailableCount(); got != tt.want {
 				t.Errorf("AvailableCount() = %v, want %v", got, tt.want)
 			}

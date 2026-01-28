@@ -84,7 +84,7 @@ func TestPathValidator_RestrictedPaths(t *testing.T) {
 	if len(paths) == 0 {
 		t.Error("RestrictedPaths() returned empty set")
 	}
-	
+
 	// Check for common restricted paths
 	found := false
 	for _, p := range paths {

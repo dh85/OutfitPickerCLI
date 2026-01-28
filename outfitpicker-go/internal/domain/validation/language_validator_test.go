@@ -74,7 +74,7 @@ func TestLanguageValidator_SupportedLanguages(t *testing.T) {
 	if len(langs) == 0 {
 		t.Error("SupportedLanguages() returned empty set")
 	}
-	
+
 	// Check for common languages
 	required := []string{"en", "es", "fr", "de"}
 	for _, lang := range required {

@@ -143,7 +143,7 @@ func TestValidateCategoryName(t *testing.T) {
 
 func TestValidateOutfit(t *testing.T) {
 	category := entities.NewCategoryReference("casual", "/path/to/casual")
-	
+
 	tests := []struct {
 		name    string
 		outfit  entities.OutfitReference
@@ -182,14 +182,14 @@ func TestFilterAvailableOutfits(t *testing.T) {
 		entities.NewFileEntry("/path/to/casual/outfit2.avatar"),
 		entities.NewFileEntry("/path/to/casual/outfit3.avatar"),
 	}
-	
+
 	worn := map[string]bool{
 		"outfit1.avatar": true,
 		"outfit3.avatar": true,
 	}
 
 	available := FilterAvailableOutfits(files, worn)
-	
+
 	if len(available) != 1 {
 		t.Errorf("FilterAvailableOutfits() length = %v, want 1", len(available))
 	}

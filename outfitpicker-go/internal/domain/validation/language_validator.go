@@ -15,11 +15,11 @@ func ValidateLanguage(language *string) error {
 	if language == nil {
 		return nil
 	}
-	
+
 	if !IsLanguageSupported(*language) {
 		return errors.ErrInvalidConfiguration
 	}
-	
+
 	return nil
 }
 
